@@ -224,10 +224,14 @@ pelican refine --target <image> --rounds <N> [--steps-per-round <N>]
    - Optimization loop with annealing
    - CLI optimize command
 
-3. **[pending]**: Phase 1C and Phase 2
+3. **e5911f4**: Phase 1C and Phase 2
    - GIF generation
    - LLM judge, architect, edit parser
    - Full refinement loop
+
+4. **04ec837**: Model version update
+   - Updated Claude model from 20241022 to 20240620
+   - Fixed 404 errors in API calls
 
 ## Success Criteria Met
 
