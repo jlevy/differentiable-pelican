@@ -1,11 +1,10 @@
 from __future__ import annotations
 
-import os
 from pathlib import Path
 
 import pytest
 import torch
-from dotenv import load_dotenv
+from PIL import Image
 
 from differentiable_pelican.geometry import create_initial_pelican
 from differentiable_pelican.optimizer import load_target_image, optimize
@@ -14,17 +13,10 @@ from differentiable_pelican.svg_export import shapes_to_svg
 from differentiable_pelican.validator import validate_image
 
 
-def has_api_key() -> bool:
-    """Check if API key is available."""
-    load_dotenv(dotenv_path=Path(__file__).parent.parent / ".env.local")
-    return os.getenv("ANTHROPIC_API_KEY") is not None
-
-
 @pytest.mark.slow
 def test_full_optimization_pipeline(tmp_path: Path) -> None:
     """
-    End-to-end test of the full optimization pipeline.
-    Tests that optimization reduces loss and produces valid output.
+    End-to-end test: optimize shapes to match target, verify loss reduction and outputs.
     """
     device = torch.device("cpu")
     resolution = 64
@@ -57,7 +49,7 @@ def test_full_optimization_pipeline(tmp_path: Path) -> None:
     final_loss = metrics["final_loss"]
     assert final_loss < initial_loss, f"Loss should decrease: {initial_loss} -> {final_loss}"
 
-    # Save outputs
+    # Save and verify outputs
     tau = 0.5 / resolution
     png_path = output_dir / "pelican_optimized.png"
     save_render(shapes, resolution, resolution, tau, device, str(png_path))
@@ -67,19 +59,17 @@ def test_full_optimization_pipeline(tmp_path: Path) -> None:
     shapes_to_svg(shapes, resolution, resolution, svg_path)
     assert svg_path.exists()
 
-    # Verify SVG contains expected elements
     svg_content = svg_path.read_text()
     assert "<svg" in svg_content
     assert "</svg>" in svg_content
     assert "circle" in svg_content or "ellipse" in svg_content or "polygon" in svg_content
 
 
-@pytest.mark.skipif(not has_api_key(), reason="No API key")
 @pytest.mark.slow
-def test_end_to_end_with_validation(tmp_path: Path) -> None:
+def test_pelican_optimization_with_validation(tmp_path: Path) -> None:
     """
-    Full end-to-end test including LLM validation.
-    Tests that optimized output resembles a pelican.
+    Full pipeline with LLM validation. Verifies optimized output resembles a pelican.
+    Will fail clearly if ANTHROPIC_API_KEY is not set.
     """
     device = torch.device("cpu")
     resolution = 128
@@ -107,7 +97,7 @@ def test_end_to_end_with_validation(tmp_path: Path) -> None:
         output_dir=output_dir,
     )
 
-    # Verify loss reduction
+    # Verify significant loss reduction
     loss_reduction = (metrics["loss_history"][0]["total"] - metrics["final_loss"]) / metrics[
         "loss_history"
     ][0]["total"]
@@ -141,8 +131,7 @@ def test_end_to_end_with_validation(tmp_path: Path) -> None:
 @pytest.mark.slow
 def test_higher_resolution_optimization(tmp_path: Path) -> None:
     """
-    Test optimization at higher resolution (256x256).
-    Verifies that the system can handle larger images.
+    Test at 256x256 resolution. Verifies performance and frame saving.
     """
     device = torch.device("cpu")
     resolution = 256
@@ -180,19 +169,16 @@ def test_higher_resolution_optimization(tmp_path: Path) -> None:
     expected_frames = (steps // 10) + 1
     assert len(frame_files) == expected_frames
 
-    # Save final output
+    # Save and verify final output
     tau = 0.5 / resolution
     png_path = output_dir / "pelican_optimized.png"
     save_render(shapes, resolution, resolution, tau, device, str(png_path))
     assert png_path.exists()
 
-    # Verify image is correct size
-    from PIL import Image
-
     img = Image.open(png_path)
     assert img.size == (resolution, resolution)
 
-    # Verify loss decreased
+    # Verify meaningful loss reduction
     initial_loss = metrics["loss_history"][0]["total"]
     final_loss = metrics["final_loss"]
     loss_reduction_pct = (initial_loss - final_loss) / initial_loss * 100
