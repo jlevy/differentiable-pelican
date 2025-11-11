@@ -38,6 +38,16 @@ classifiers = [
 # ---- Main dependencies ----
 
 dependencies = [
+    "torch>=2.1.0",
+    "torchvision>=0.16.0",
+    "pillow>=10.0.0",
+    "numpy>=1.24.0",
+    "rich>=13.0.0",
+    "anthropic>=0.18.0",
+    "pydantic>=2.0.0",
+    "imageio>=2.31.0",
+    "matplotlib>=3.7.0",
+    "python-dotenv>=1.0.0",
 ]
 
 
@@ -55,8 +65,7 @@ dev = [
 ]
 
 [project.scripts]
-# Add script entry points here:
-differentiable-pelican = "differentiable_pelican:main"
+pelican = "differentiable_pelican.cli:app"
 
 
 # ---- Build system ----
@@ -170,3 +179,6 @@ testpaths = [
 ]
 norecursedirs = []
 filterwarnings = []
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+]
