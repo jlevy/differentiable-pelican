@@ -153,6 +153,22 @@ def optimize_command() -> None:
         json.dump(metrics, f, indent=2)
     console.print(f"  ✓ Saved metrics: {metrics_path}")
 
+    # Generate animation if frames were saved
+    if save_every:
+        console.print("\n[cyan]Generating animation...[/cyan]")
+        try:
+            import imageio.v3 as iio
+
+            frames_dir = output_dir / "frames"
+            frame_files = sorted(frames_dir.glob("frame_*.png"))
+            if frame_files:
+                gif_path = output_dir / "optimization.gif"
+                images = [iio.imread(str(f)) for f in frame_files]
+                iio.imwrite(str(gif_path), images, duration=100, loop=0)
+                console.print(f"  ✓ Saved animation: {gif_path}")
+        except Exception as e:
+            console.print(f"  [yellow]Warning: Could not create GIF: {e}[/yellow]")
+
     # Print final stats
     console.print("\n[green]✓ Optimization complete![/green]")
     console.print(f"\nFinal Loss: {metrics['final_loss']:.6f}")

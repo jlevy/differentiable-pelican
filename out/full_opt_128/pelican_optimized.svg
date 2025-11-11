@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <rect width="128" height="128" fill="white"/>
+  <!-- Shape 0: Ellipse -->
+  <ellipse cx="54.74" cy="90.81" rx="9.66" ry="17.23" fill="black" transform="rotate(3.21 54.74 90.81)"/>
+  <!-- Shape 1: Circle -->
+  <circle cx="80.19" cy="54.85" r="8.97" fill="black"/>
+  <!-- Shape 2: Triangle -->
+  <polygon points="79.77,22.57 77.67,45.57 107.69,42.42" fill="black"/>
+  <!-- Shape 3: Circle -->
+  <circle cx="76.15" cy="57.15" r="1.07" fill="black"/>
+  <!-- Shape 4: Ellipse -->
+  <ellipse cx="55.86" cy="85.59" rx="4.58" ry="8.27" fill="black" transform="rotate(12.31 55.86 85.59)"/>
+</svg>

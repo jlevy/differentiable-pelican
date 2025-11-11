@@ -40,11 +40,13 @@ def app() -> None:
         console.print("[yellow]export command not yet implemented[/yellow]")
         sys.exit(1)
     elif command == "judge":
-        console.print("[yellow]judge command not yet implemented[/yellow]")
-        sys.exit(1)
+        from differentiable_pelican.commands_judge import judge_command
+
+        judge_command()
     elif command == "refine":
-        console.print("[yellow]refine command not yet implemented[/yellow]")
-        sys.exit(1)
+        from differentiable_pelican.commands_refine import refine_command
+
+        refine_command()
     else:
         console.print(f"[red]Error: Unknown command '{command}'[/red]")
         sys.exit(1)
