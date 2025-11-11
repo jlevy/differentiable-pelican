@@ -24,16 +24,15 @@ def test_validation_schema_parsing():
     """
     Test that ImageValidation schema works correctly.
     """
-    data = {
-        "is_blank": False,
-        "has_shapes": True,
-        "shapes_recognizable": True,
-        "resembles_pelican": False,
-        "on_canvas": True,
-        "description": "A simple black circle on white background",
-        "issues": [],
-    }
-    validation = ImageValidation(**data)
+    validation = ImageValidation(
+        is_blank=False,
+        has_shapes=True,
+        shapes_recognizable=True,
+        resembles_pelican=False,
+        on_canvas=True,
+        description="A simple black circle on white background",
+        issues=[],
+    )
     assert validation.is_blank is False
     assert validation.has_shapes is True
     assert validation.similarity_to_target is None
@@ -43,22 +42,21 @@ def test_validation_schema_with_similarity():
     """
     Test that ImageValidation handles optional similarity score.
     """
-    data = {
-        "is_blank": False,
-        "has_shapes": True,
-        "shapes_recognizable": True,
-        "resembles_pelican": True,
-        "on_canvas": True,
-        "description": "A pelican-like shape",
-        "issues": [],
-        "similarity_to_target": 0.75,
-    }
-    validation = ImageValidation(**data)
+    validation = ImageValidation(
+        is_blank=False,
+        has_shapes=True,
+        shapes_recognizable=True,
+        resembles_pelican=True,
+        on_canvas=True,
+        description="A pelican-like shape",
+        issues=[],
+        similarity_to_target=0.75,
+    )
     assert validation.similarity_to_target == 0.75
 
 
 @pytest.fixture
-def temp_images(tmp_path: Path):
+def temp_images(tmp_path: Path) -> dict[str, Path]:
     """
     Create temporary test images.
     """
@@ -82,7 +80,7 @@ def temp_images(tmp_path: Path):
 
 @pytest.mark.skipif(not has_api_key(), reason="No API key")
 @pytest.mark.slow
-def test_validate_blank_image(temp_images):
+def test_validate_blank_image(temp_images: dict[str, Path]) -> None:
     """
     Test validation of a blank image.
     """
@@ -92,7 +90,7 @@ def test_validate_blank_image(temp_images):
 
 @pytest.mark.skipif(not has_api_key(), reason="No API key")
 @pytest.mark.slow
-def test_validate_simple_circle(temp_images):
+def test_validate_simple_circle(temp_images: dict[str, Path]) -> None:
     """
     Test validation of an image with a simple circle.
     """
@@ -103,7 +101,7 @@ def test_validate_simple_circle(temp_images):
 
 @pytest.mark.skipif(not has_api_key(), reason="No API key")
 @pytest.mark.slow
-def test_validate_with_target(temp_images):
+def test_validate_with_target(temp_images: dict[str, Path]) -> None:
     """
     Test validation with a target image provided.
     """

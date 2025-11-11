@@ -39,9 +39,7 @@ def perimeter_prior(shapes: list[Shape]) -> torch.Tensor:
             v = params.vertices
             # Sum of edge lengths
             edge_lengths = (
-                torch.norm(v[1] - v[0])
-                + torch.norm(v[2] - v[1])
-                + torch.norm(v[0] - v[2])
+                torch.norm(v[1] - v[0]) + torch.norm(v[2] - v[1]) + torch.norm(v[0] - v[2])
             )
             total = total + edge_lengths
 

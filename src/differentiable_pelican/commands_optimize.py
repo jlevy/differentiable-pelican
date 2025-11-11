@@ -111,18 +111,6 @@ def optimize_command() -> None:
     ) as progress:
         task = progress.add_task("Optimizing", total=args.steps)
 
-        # Simple callback wrapper to update progress
-        original_optimize = optimize
-
-        class ProgressWrapper:
-            def __init__(self):
-                self.last_step = 0
-
-            def __call__(self, *args, **kwargs):
-                result = original_optimize(*args, **kwargs)
-                progress.update(task, completed=args.steps)
-                return result
-
         metrics = optimize(
             shapes,
             target,
@@ -132,6 +120,8 @@ def optimize_command() -> None:
             save_every=save_every,
             output_dir=output_dir,
         )
+
+        progress.update(task, completed=args.steps)
 
     # Save final outputs
     console.print("\n[cyan]Saving outputs...[/cyan]")

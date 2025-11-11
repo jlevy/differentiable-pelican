@@ -156,8 +156,16 @@ def validate_image(
         messages=[{"role": "user", "content": content_blocks}],
     )
 
-    # Parse response
-    response_text = response.content[0].text
+    # Parse response - extract text from first text content block
+    response_text = ""
+    for block in response.content:
+        if hasattr(block, "text"):
+            response_text = block.text
+            break
+
+    if not response_text:
+        raise ValueError(f"No text content in response: {response.content}")
+
     try:
         response_json = json.loads(response_text)
         return ImageValidation(**response_json)

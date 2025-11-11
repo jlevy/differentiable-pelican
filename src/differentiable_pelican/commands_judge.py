@@ -6,7 +6,6 @@ import sys
 from pathlib import Path
 
 from rich.console import Console
-from rich.markdown import Markdown
 from rich.panel import Panel
 
 from differentiable_pelican.llm.judge import judge_svg
@@ -27,9 +26,7 @@ def judge_command() -> None:
     parser.add_argument(
         "--metrics", type=Path, help="Optional path to metrics JSON from optimization"
     )
-    parser.add_argument(
-        "--output", type=Path, help="Optional path to save feedback JSON"
-    )
+    parser.add_argument("--output", type=Path, help="Optional path to save feedback JSON")
 
     args = parser.parse_args(sys.argv[2:])
 
@@ -67,9 +64,7 @@ def judge_command() -> None:
         console.print(
             f"[bold]Resembles Pelican:[/bold] {'Yes' if feedback.resembles_pelican else 'No'}"
         )
-        console.print(
-            f"[bold]Similarity to Target:[/bold] {feedback.similarity_to_target:.2f}"
-        )
+        console.print(f"[bold]Similarity to Target:[/bold] {feedback.similarity_to_target:.2f}")
         console.print(
             f"[bold]Ready for Refinement:[/bold] {'Yes' if feedback.ready_for_refinement else 'No'}"
         )
@@ -78,17 +73,17 @@ def judge_command() -> None:
             console.print(f"\n[bold]Geometric Accuracy:[/bold]\n{feedback.geometric_accuracy}")
 
         if feedback.missing_features:
-            console.print(f"\n[bold]Missing Features:[/bold]")
+            console.print("\n[bold]Missing Features:[/bold]")
             for feature in feedback.missing_features:
                 console.print(f"  • {feature}")
 
         if feedback.topology_issues:
-            console.print(f"\n[bold]Topology Issues:[/bold]")
+            console.print("\n[bold]Topology Issues:[/bold]")
             for issue in feedback.topology_issues:
                 console.print(f"  • {issue}")
 
         if feedback.suggestions:
-            console.print(f"\n[bold]Suggestions:[/bold]")
+            console.print("\n[bold]Suggestions:[/bold]")
             for suggestion in feedback.suggestions:
                 console.print(f"  • {suggestion}")
 

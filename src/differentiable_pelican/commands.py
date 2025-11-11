@@ -8,7 +8,6 @@ from rich.console import Console
 from rich.panel import Panel
 
 from differentiable_pelican.geometry import create_initial_pelican
-from differentiable_pelican.optimizer import load_target_image, optimize
 from differentiable_pelican.renderer import save_render
 from differentiable_pelican.svg_export import shapes_to_svg
 from differentiable_pelican.utils import ensure_output_dir, pick_device
@@ -16,7 +15,7 @@ from differentiable_pelican.utils import ensure_output_dir, pick_device
 console = Console()
 
 
-def test_render_command() -> None:
+def render_test_command() -> None:
     """
     CLI command for test rendering (Phase 1A).
 

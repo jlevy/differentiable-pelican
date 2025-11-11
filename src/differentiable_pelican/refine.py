@@ -2,16 +2,35 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-
-import torch
+from typing import TypedDict
 
 from differentiable_pelican.geometry import Shape
 from differentiable_pelican.llm.architect import architect_edits
 from differentiable_pelican.llm.edit_parser import parse_edits
 from differentiable_pelican.llm.judge import judge_svg
-from differentiable_pelican.optimizer import load_target_image, optimize
+from differentiable_pelican.optimizer import OptimizationMetrics, load_target_image, optimize
 from differentiable_pelican.renderer import save_render
 from differentiable_pelican.svg_export import shapes_to_svg
+
+
+class RefinementRoundRecord(TypedDict, total=False):
+    """Record from a single refinement round. Fields vary by outcome."""
+
+    round: int
+    metrics: OptimizationMetrics
+    feedback: dict[str, bool | float | str | list[str]]
+    architect: dict[str, str | list]
+    num_shapes: int
+    converged: bool
+    error: str
+
+
+class RefinementResult(TypedDict):
+    """Results from multi-round refinement loop."""
+
+    rounds_completed: int
+    history: list[RefinementRoundRecord]
+    final_shapes: int
 
 
 def refinement_loop(
@@ -23,7 +42,7 @@ def refinement_loop(
     max_rounds: int = 5,
     steps_per_round: int = 500,
     convergence_threshold: float = 0.01,
-) -> dict:
+) -> RefinementResult:
     """
     Multi-round refinement loop with LLM feedback.
 

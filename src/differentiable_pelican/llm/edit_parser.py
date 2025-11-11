@@ -8,9 +8,9 @@ from differentiable_pelican.geometry import Circle, Ellipse, Shape, Triangle
 from differentiable_pelican.llm.architect import ShapeEdit
 
 
-def parse_percentage(value_str: str, current: float) -> float:
+def parse_percentage(value_str: str | float, current: float) -> float:
     """
-    Parse percentage change like "+20%" or "-10%".
+    Parse percentage change like "+20%" or "-10%", or absolute float value.
     """
     if isinstance(value_str, (int, float)):
         return float(value_str)
@@ -47,9 +47,7 @@ def apply_edit_to_shape(edit: ShapeEdit, shape: Shape) -> None:
             shape.cy_raw.data = torch.tensor(shape._logit(new_cy), device=shape.device)
         if "radius" in edit.changes:
             new_r = parse_percentage(edit.changes["radius"], float(params.radius.item()))
-            shape.radius_raw.data = torch.tensor(
-                [shape._inv_softplus(new_r)], device=shape.device
-            )
+            shape.radius_raw.data = torch.tensor([shape._inv_softplus(new_r)], device=shape.device)
 
     elif isinstance(shape, Ellipse):
         params = shape.get_params()
@@ -61,14 +59,10 @@ def apply_edit_to_shape(edit: ShapeEdit, shape: Shape) -> None:
             shape.cy_raw.data = torch.tensor(Circle._logit(new_cy), device=shape.device)
         if "rx" in edit.changes:
             new_rx = parse_percentage(edit.changes["rx"], float(params.rx.item()))
-            shape.rx_raw.data = torch.tensor(
-                [Circle._inv_softplus(new_rx)], device=shape.device
-            )
+            shape.rx_raw.data = torch.tensor([Circle._inv_softplus(new_rx)], device=shape.device)
         if "ry" in edit.changes:
             new_ry = parse_percentage(edit.changes["ry"], float(params.ry.item()))
-            shape.ry_raw.data = torch.tensor(
-                [Circle._inv_softplus(new_ry)], device=shape.device
-            )
+            shape.ry_raw.data = torch.tensor([Circle._inv_softplus(new_ry)], device=shape.device)
         if "rotation" in edit.changes:
             new_rot = parse_percentage(edit.changes["rotation"], float(params.rotation.item()))
             shape.rotation_raw.data = torch.tensor([new_rot], device=shape.device)
@@ -133,7 +127,7 @@ def parse_edits(
     device = shapes[0].device if shapes else torch.device("cpu")
 
     # Build name -> shape mapping
-    shape_map = {name: shape for name, shape in zip(shape_names, shapes)}
+    shape_map = {name: shape for name, shape in zip(shape_names, shapes, strict=True)}
 
     for edit in edits:
         if edit.type == "modify":

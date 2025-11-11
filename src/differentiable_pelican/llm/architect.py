@@ -106,7 +106,16 @@ def architect_edits(feedback: JudgeFeedback) -> ArchitectResponse:
         messages=[{"role": "user", "content": prompt}],
     )
 
-    response_text = response.content[0].text
+    # Extract text from first text content block
+    response_text = ""
+    for block in response.content:
+        if hasattr(block, "text"):
+            response_text = block.text
+            break
+
+    if not response_text:
+        raise ValueError(f"No text content in response: {response.content}")
+
     try:
         response_json = json.loads(response_text)
         return ArchitectResponse(**response_json)

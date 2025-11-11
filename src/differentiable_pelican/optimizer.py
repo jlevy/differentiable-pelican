@@ -1,16 +1,24 @@
 from __future__ import annotations
 
-import json
 from pathlib import Path
+from typing import TypedDict
 
 import numpy as np
 import torch
-import torch.nn as nn
 from PIL import Image
 
 from differentiable_pelican.geometry import Shape
 from differentiable_pelican.loss import total_loss
 from differentiable_pelican.renderer import make_grid, render
+
+
+class OptimizationMetrics(TypedDict):
+    """Metrics returned from optimization."""
+
+    loss_history: list[dict[str, float]]
+    final_loss: float
+    steps_completed: int
+    resolution: int
 
 
 def load_target_image(path: Path, resolution: int, device: torch.device) -> torch.Tensor:
@@ -42,7 +50,7 @@ def optimize(
     tau_end: float | None = None,
     save_every: int | None = None,
     output_dir: Path | None = None,
-) -> dict:
+) -> OptimizationMetrics:
     """
     Optimize shapes to match target image using gradient descent.
 
@@ -121,7 +129,10 @@ def optimize(
         # Save best parameters
         if breakdown["total"] < best_loss:
             best_loss = breakdown["total"]
-            best_params = {i: {k: v.detach().clone() for k, v in shape.state_dict().items()} for i, shape in enumerate(shapes)}
+            best_params = {
+                i: {k: v.detach().clone() for k, v in shape.state_dict().items()}
+                for i, shape in enumerate(shapes)
+            }
 
         # Save intermediate frames
         if save_every and output_dir and (step % save_every == 0 or step == steps - 1):
@@ -170,7 +181,6 @@ def test_optimize_reduces_loss_simple_case():
     """
     Test that optimization reduces loss for a simple case.
     """
-    import numpy as np
 
     from differentiable_pelican.geometry import Circle
 
@@ -180,7 +190,7 @@ def test_optimize_reduces_loss_simple_case():
     # Create target: circle at center
     target_circle = Circle(cx=0.5, cy=0.5, radius=0.2, device=device)
     tau = 1.0 / resolution
-    target = render([target_circle], resolution, resolution, tau, device)
+    target = render([target_circle], resolution, resolution, tau, device).detach()
 
     # Create initial: slightly offset circle
     init_circle = Circle(cx=0.45, cy=0.45, radius=0.18, device=device)

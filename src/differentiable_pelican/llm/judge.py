@@ -10,6 +10,8 @@ import anthropic
 from dotenv import load_dotenv
 from pydantic import BaseModel
 
+from differentiable_pelican.optimizer import OptimizationMetrics
+
 # Load environment variables
 load_dotenv(dotenv_path=Path(__file__).parent.parent.parent.parent / ".env.local")
 
@@ -34,7 +36,7 @@ def judge_svg(
     svg_path: Path,
     png_path: Path,
     target_path: Path,
-    metrics: dict | None = None,
+    metrics: OptimizationMetrics | None = None,
 ) -> JudgeFeedback:
     """
     Use LLM to evaluate optimized SVG and provide structured feedback.
@@ -143,8 +145,16 @@ def judge_svg(
         messages=[{"role": "user", "content": content_blocks}],
     )
 
-    # Parse response
-    response_text = response.content[0].text
+    # Parse response - extract text from first text content block
+    response_text = ""
+    for block in response.content:
+        if hasattr(block, "text"):
+            response_text = block.text
+            break
+
+    if not response_text:
+        raise ValueError(f"No text content in response: {response.content}")
+
     try:
         response_json = json.loads(response_text)
         return JudgeFeedback(**response_json)

@@ -29,9 +29,9 @@ def app() -> None:
 
         validate_image_cli()
     elif command == "test-render":
-        from differentiable_pelican.commands import test_render_command
+        from differentiable_pelican.commands import render_test_command
 
-        test_render_command()
+        render_test_command()
     elif command == "optimize":
         from differentiable_pelican.commands_optimize import optimize_command
 

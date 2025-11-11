@@ -97,7 +97,7 @@ def refine_command() -> None:
             steps_per_round=args.steps_per_round,
         )
 
-        console.print(f"\n[green]✓ Refinement complete![/green]")
+        console.print("\n[green]✓ Refinement complete![/green]")
         console.print(f"\nRounds completed: {result['rounds_completed']}")
         console.print(f"Final shape count: {result['final_shapes']}")
         console.print(f"\nOutputs saved to: {output_dir}")
