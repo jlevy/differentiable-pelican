@@ -33,8 +33,9 @@ def app() -> None:
 
         test_render_command()
     elif command == "optimize":
-        console.print("[yellow]optimize command not yet implemented[/yellow]")
-        sys.exit(1)
+        from differentiable_pelican.commands_optimize import optimize_command
+
+        optimize_command()
     elif command == "export":
         console.print("[yellow]export command not yet implemented[/yellow]")
         sys.exit(1)
