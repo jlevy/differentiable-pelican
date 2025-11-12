@@ -19,7 +19,7 @@ class RefinementRoundRecord(TypedDict, total=False):
     round: int
     metrics: OptimizationMetrics
     feedback: dict[str, bool | float | str | list[str]]
-    architect: dict[str, str | list]
+    architect: dict[str, str | list[dict[str, str]]]
     num_shapes: int
     converged: bool
     error: str

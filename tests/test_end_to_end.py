@@ -101,7 +101,9 @@ def test_pelican_optimization_with_validation(tmp_path: Path) -> None:
     loss_reduction = (metrics["loss_history"][0]["total"] - metrics["final_loss"]) / metrics[
         "loss_history"
     ][0]["total"]
-    assert loss_reduction > 0.1, f"Should reduce loss by at least 10%, got {loss_reduction*100:.1f}%"
+    assert loss_reduction > 0.1, (
+        f"Should reduce loss by at least 10%, got {loss_reduction * 100:.1f}%"
+    )
 
     # Save PNG
     tau = 0.5 / resolution
@@ -117,15 +119,15 @@ def test_pelican_optimization_with_validation(tmp_path: Path) -> None:
     assert validation.on_canvas, "Shapes should be within canvas bounds"
 
     # Should resemble a pelican or at least have recognizable shapes
-    assert (
-        validation.shapes_recognizable or validation.resembles_pelican
-    ), "Output should have recognizable shapes or resemble a pelican"
+    assert validation.shapes_recognizable or validation.resembles_pelican, (
+        "Output should have recognizable shapes or resemble a pelican"
+    )
 
     # Similarity should be reasonable
     if validation.similarity_to_target is not None:
-        assert (
-            validation.similarity_to_target > 0.1
-        ), f"Should have some similarity to target, got {validation.similarity_to_target}"
+        assert validation.similarity_to_target > 0.1, (
+            f"Should have some similarity to target, got {validation.similarity_to_target}"
+        )
 
 
 @pytest.mark.slow
@@ -182,6 +184,6 @@ def test_higher_resolution_optimization(tmp_path: Path) -> None:
     initial_loss = metrics["loss_history"][0]["total"]
     final_loss = metrics["final_loss"]
     loss_reduction_pct = (initial_loss - final_loss) / initial_loss * 100
-    assert (
-        loss_reduction_pct > 5
-    ), f"Should reduce loss by at least 5% at high res, got {loss_reduction_pct:.1f}%"
+    assert loss_reduction_pct > 5, (
+        f"Should reduce loss by at least 5% at high res, got {loss_reduction_pct:.1f}%"
+    )

@@ -1,12 +1,13 @@
 from __future__ import annotations
 
+from collections.abc import Sequence
 from pathlib import Path
 
 from differentiable_pelican.geometry import Circle, Ellipse, Shape, Triangle
 
 
 def shapes_to_svg(
-    shapes: list[Shape],
+    shapes: Sequence[Shape],
     width: int,
     height: int,
     output_path: Path,

@@ -142,14 +142,14 @@ def judge_svg(
     response = client.messages.create(
         model="claude-3-5-sonnet-20240620",
         max_tokens=2048,
-        messages=[{"role": "user", "content": content_blocks}],
+        messages=[{"role": "user", "content": content_blocks}],  # pyright: ignore[reportArgumentType]
     )
 
     # Parse response - extract text from first text content block
     response_text = ""
     for block in response.content:
-        if hasattr(block, "text"):
-            response_text = block.text
+        if block.type == "text":
+            response_text = block.text  # type: ignore[attr-defined]
             break
 
     if not response_text:

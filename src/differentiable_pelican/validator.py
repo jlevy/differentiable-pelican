@@ -84,7 +84,7 @@ def validate_image(
     image_b64 = encode_image_to_base64(image_path)
     image_media_type = get_image_media_type(image_path)
 
-    content_blocks: list[dict] = [
+    content_blocks: list[dict[str, str | dict[str, str]]] = [
         {
             "type": "image",
             "source": {
@@ -153,14 +153,14 @@ def validate_image(
     response = client.messages.create(
         model="claude-3-5-sonnet-20240620",
         max_tokens=1024,
-        messages=[{"role": "user", "content": content_blocks}],
+        messages=[{"role": "user", "content": content_blocks}],  # pyright: ignore[reportArgumentType]
     )
 
     # Parse response - extract text from first text content block
     response_text = ""
     for block in response.content:
-        if hasattr(block, "text"):
-            response_text = block.text
+        if block.type == "text":
+            response_text = block.text  # type: ignore[attr-defined]
             break
 
     if not response_text:

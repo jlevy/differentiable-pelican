@@ -109,8 +109,8 @@ def architect_edits(feedback: JudgeFeedback) -> ArchitectResponse:
     # Extract text from first text content block
     response_text = ""
     for block in response.content:
-        if hasattr(block, "text"):
-            response_text = block.text
+        if block.type == "text":
+            response_text = block.text  # type: ignore[attr-defined]
             break
 
     if not response_text:

@@ -98,10 +98,12 @@ def optimize(
     best_params = None
 
     # Setup output directory if saving frames
+    frames_dir: Path | None = None
     if save_every and output_dir:
         frames_dir = output_dir / "frames"
         frames_dir.mkdir(parents=True, exist_ok=True)
 
+    step = 0
     for step in range(steps):
         # Anneal tau
         tau = anneal_tau(step, steps, tau_start, tau_end)
@@ -135,7 +137,12 @@ def optimize(
             }
 
         # Save intermediate frames
-        if save_every and output_dir and (step % save_every == 0 or step == steps - 1):
+        if (
+            save_every
+            and output_dir
+            and frames_dir
+            and (step % save_every == 0 or step == steps - 1)
+        ):
             with torch.no_grad():
                 rendered_np = (rendered.detach().cpu().numpy() * 255).astype(np.uint8)
                 img = Image.fromarray(rendered_np, mode="L")
@@ -158,7 +165,7 @@ def optimize(
         "resolution": resolution,
     }
 
-    return metrics
+    return metrics  # pyright: ignore[reportReturnType]
 
 
 ## Tests

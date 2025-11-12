@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from collections.abc import Sequence
+
 import torch
 
 from differentiable_pelican.geometry import Circle, Ellipse, Shape, Triangle
@@ -12,7 +14,7 @@ def mse_loss(rendered: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
     return torch.mean((rendered - target) ** 2)
 
 
-def perimeter_prior(shapes: list[Shape]) -> torch.Tensor:
+def perimeter_prior(shapes: Sequence[Shape]) -> torch.Tensor:
     """
     Penalize large shapes to encourage compactness.
 
@@ -46,7 +48,9 @@ def perimeter_prior(shapes: list[Shape]) -> torch.Tensor:
     return total
 
 
-def triangle_degeneracy_penalty(shapes: list[Shape], min_edge_length: float = 0.01) -> torch.Tensor:
+def triangle_degeneracy_penalty(
+    shapes: Sequence[Shape], min_edge_length: float = 0.01
+) -> torch.Tensor:
     """
     Penalize degenerate triangles with very small edges.
     """
@@ -68,7 +72,7 @@ def triangle_degeneracy_penalty(shapes: list[Shape], min_edge_length: float = 0.
     return penalty
 
 
-def on_canvas_penalty(shapes: list[Shape], margin: float = 0.05) -> torch.Tensor:
+def on_canvas_penalty(shapes: Sequence[Shape], margin: float = 0.05) -> torch.Tensor:
     """
     Penalize shapes that go outside [0, 1] bounds with margin.
     """
@@ -106,7 +110,7 @@ def on_canvas_penalty(shapes: list[Shape], margin: float = 0.05) -> torch.Tensor
 def total_loss(
     rendered: torch.Tensor,
     target: torch.Tensor,
-    shapes: list[Shape],
+    shapes: Sequence[Shape],
     perimeter_weight: float = 0.001,
     degeneracy_weight: float = 0.1,
     canvas_weight: float = 1.0,

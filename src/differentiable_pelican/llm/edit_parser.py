@@ -97,10 +97,17 @@ def create_shape_from_edit(edit: ShapeEdit, device: torch.device) -> Shape | Non
         v0 = params.get("v0", [0.3, 0.3])
         v1 = params.get("v1", [0.7, 0.3])
         v2 = params.get("v2", [0.5, 0.7])
+        # Ensure v0, v1, v2 are lists/tuples, not floats
+        if not isinstance(v0, (list, tuple)):
+            v0 = [0.3, 0.3]
+        if not isinstance(v1, (list, tuple)):
+            v1 = [0.7, 0.3]
+        if not isinstance(v2, (list, tuple)):
+            v2 = [0.5, 0.7]
         return Triangle(
-            v0=(v0[0], v0[1]),
-            v1=(v1[0], v1[1]),
-            v2=(v2[0], v2[1]),
+            v0=(float(v0[0]), float(v0[1])),
+            v1=(float(v1[0]), float(v1[1])),
+            v2=(float(v2[0]), float(v2[1])),
             device=device,
         )
     else:
