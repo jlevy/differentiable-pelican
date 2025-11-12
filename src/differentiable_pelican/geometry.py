@@ -4,6 +4,24 @@ from dataclasses import dataclass
 
 import torch
 import torch.nn as nn
+from typing_extensions import override
+
+
+def logit_param(x: float, eps: float = 1e-6) -> float:
+    """
+    Inverse sigmoid for constraining parameters to [0,1].
+    """
+    x = max(eps, min(1 - eps, x))
+    return float(torch.logit(torch.tensor(x)).item())
+
+
+def inv_softplus(x: float, eps: float = 1e-6) -> float:
+    """
+    Inverse softplus: softplus(y) = x => y = log(exp(x) - 1).
+    Used for constraining parameters to be positive.
+    """
+    x = max(eps, x)
+    return float(torch.log(torch.exp(torch.tensor(x)) - 1.0).item())
 
 
 @dataclass
@@ -44,6 +62,8 @@ class Shape(nn.Module):
     Base class for parameterized shapes.
     """
 
+    device: torch.device
+
     def __init__(self, device: torch.device):
         super().__init__()
         self.device = device
@@ -54,7 +74,7 @@ class Shape(nn.Module):
         """
         raise NotImplementedError
 
-    def sdf(self, points: torch.Tensor) -> torch.Tensor:
+    def sdf(self, _points: torch.Tensor) -> torch.Tensor:  # pyright: ignore[reportUnusedParameter]
         """
         Compute signed distance field at given points.
         """
@@ -66,6 +86,10 @@ class Circle(Shape):
     Differentiable circle with constrained parameters.
     """
 
+    cx_raw: nn.Parameter
+    cy_raw: nn.Parameter
+    radius_raw: nn.Parameter
+
     def __init__(
         self,
         cx: float,
@@ -76,26 +100,11 @@ class Circle(Shape):
         super().__init__(device)
         # Store unconstrained parameters
         # Use logit for [0,1] values and inv_softplus for positive values
-        self.cx_raw = nn.Parameter(torch.tensor(self._logit(cx), device=device))
-        self.cy_raw = nn.Parameter(torch.tensor(self._logit(cy), device=device))
-        self.radius_raw = nn.Parameter(torch.tensor([self._inv_softplus(radius)], device=device))
+        self.cx_raw = nn.Parameter(torch.tensor(logit_param(cx), device=device))
+        self.cy_raw = nn.Parameter(torch.tensor(logit_param(cy), device=device))
+        self.radius_raw = nn.Parameter(torch.tensor([inv_softplus(radius)], device=device))
 
-    @staticmethod
-    def _logit(x: float, eps: float = 1e-6) -> float:
-        """
-        Inverse sigmoid.
-        """
-        x = max(eps, min(1 - eps, x))
-        return float(torch.logit(torch.tensor(x)).item())
-
-    @staticmethod
-    def _inv_softplus(x: float, eps: float = 1e-6) -> float:
-        """
-        Inverse softplus: softplus(y) = x => y = log(exp(x) - 1)
-        """
-        x = max(eps, x)
-        return float(torch.log(torch.exp(torch.tensor(x)) - 1.0).item())
-
+    @override
     def get_params(self) -> CircleParams:
         """
         Derive constrained parameters from unconstrained.
@@ -105,6 +114,7 @@ class Circle(Shape):
         radius = torch.nn.functional.softplus(self.radius_raw)
         return CircleParams(cx=cx, cy=cy, radius=radius)
 
+    @override
     def sdf(self, points: torch.Tensor) -> torch.Tensor:
         """
         Compute signed distance field.
@@ -121,6 +131,12 @@ class Ellipse(Shape):
     Differentiable ellipse with constrained parameters.
     """
 
+    cx_raw: nn.Parameter
+    cy_raw: nn.Parameter
+    rx_raw: nn.Parameter
+    ry_raw: nn.Parameter
+    rotation_raw: nn.Parameter
+
     def __init__(
         self,
         cx: float,
@@ -131,12 +147,13 @@ class Ellipse(Shape):
         device: torch.device,
     ):
         super().__init__(device)
-        self.cx_raw = nn.Parameter(torch.tensor(Circle._logit(cx), device=device))
-        self.cy_raw = nn.Parameter(torch.tensor(Circle._logit(cy), device=device))
-        self.rx_raw = nn.Parameter(torch.tensor([Circle._inv_softplus(rx)], device=device))
-        self.ry_raw = nn.Parameter(torch.tensor([Circle._inv_softplus(ry)], device=device))
+        self.cx_raw = nn.Parameter(torch.tensor(logit_param(cx), device=device))
+        self.cy_raw = nn.Parameter(torch.tensor(logit_param(cy), device=device))
+        self.rx_raw = nn.Parameter(torch.tensor([inv_softplus(rx)], device=device))
+        self.ry_raw = nn.Parameter(torch.tensor([inv_softplus(ry)], device=device))
         self.rotation_raw = nn.Parameter(torch.tensor([rotation], device=device))
 
+    @override
     def get_params(self) -> EllipseParams:
         """
         Derive constrained parameters.
@@ -148,6 +165,7 @@ class Ellipse(Shape):
         rotation = self.rotation_raw  # Rotation is unconstrained
         return EllipseParams(cx=cx, cy=cy, rx=rx, ry=ry, rotation=rotation)
 
+    @override
     def sdf(self, points: torch.Tensor) -> torch.Tensor:
         """
         Compute signed distance field.
@@ -165,6 +183,10 @@ class Triangle(Shape):
     Differentiable triangle with constrained parameters.
     """
 
+    v0_raw: nn.Parameter
+    v1_raw: nn.Parameter
+    v2_raw: nn.Parameter
+
     def __init__(
         self,
         v0: tuple[float, float],
@@ -175,15 +197,16 @@ class Triangle(Shape):
         super().__init__(device)
         # Each vertex coordinate is constrained to [0, 1] via sigmoid
         self.v0_raw = nn.Parameter(
-            torch.tensor([Circle._logit(v0[0]), Circle._logit(v0[1])], device=device)
+            torch.tensor([logit_param(v0[0]), logit_param(v0[1])], device=device)
         )
         self.v1_raw = nn.Parameter(
-            torch.tensor([Circle._logit(v1[0]), Circle._logit(v1[1])], device=device)
+            torch.tensor([logit_param(v1[0]), logit_param(v1[1])], device=device)
         )
         self.v2_raw = nn.Parameter(
-            torch.tensor([Circle._logit(v2[0]), Circle._logit(v2[1])], device=device)
+            torch.tensor([logit_param(v2[0]), logit_param(v2[1])], device=device)
         )
 
+    @override
     def get_params(self) -> TriangleParams:
         """
         Derive constrained parameters.
@@ -194,6 +217,7 @@ class Triangle(Shape):
         vertices = torch.stack([v0, v1, v2])
         return TriangleParams(vertices=vertices)
 
+    @override
     def sdf(self, points: torch.Tensor) -> torch.Tensor:
         """
         Compute signed distance field.

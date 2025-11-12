@@ -157,16 +157,11 @@ reportAny = false
 reportExplicitAny = false
 reportImplicitStringConcatenation = false
 reportUnreachable = false
-# Disable warnings from torch type stubs and intentional design patterns
+# Disable torch type stub warnings (unfixable without better PyTorch stubs)
 reportUnknownMemberType = false
 reportUnknownVariableType = false
 reportUnknownArgumentType = false
 reportUnknownParameterType = false
-reportPrivateUsage = false
-reportUnannotatedClassAttribute = false
-reportImplicitOverride = false
-reportUnusedParameter = false
-reportUnusedVariable = false
 # reportPrivateImportUsage = false
 # reportPrivateLocalImportUsage = false
 # reportMissingImports = false

@@ -212,7 +212,7 @@ def test_total_loss_combines_components():
     target = torch.rand(64, 64)
     shapes = [Circle(cx=0.5, cy=0.5, radius=0.2, device=device)]
 
-    loss, breakdown = total_loss(rendered, target, shapes)
+    _, breakdown = total_loss(rendered, target, shapes)
 
     assert "mse" in breakdown
     assert "perimeter" in breakdown
