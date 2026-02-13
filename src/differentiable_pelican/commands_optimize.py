@@ -151,15 +151,23 @@ def optimize_command() -> None:
     if save_every:
         console.print("\n[cyan]Generating animation...[/cyan]")
         try:
+            import shutil
+
             import imageio.v3 as iio
 
             frames_dir = output_dir / "frames"
+
+            # Add the final best-param render as the last GIF frame.
+            # The optimizer restores best params after the loop, so the final PNG
+            # may differ from the last step's render.
+            shutil.copy2(str(png_path), str(frames_dir / "frame_final.png"))
+
             frame_files = sorted(frames_dir.glob("frame_*.png"))
             if frame_files:
                 gif_path = output_dir / "optimization.gif"
                 images = [iio.imread(str(f)) for f in frame_files]  # pyright: ignore[reportUnknownMemberType]
-                iio.imwrite(str(gif_path), images, duration=250, loop=0)  # pyright: ignore[reportUnknownMemberType]
-                console.print(f"  -> Saved animation: {gif_path}")
+                iio.imwrite(str(gif_path), images, duration=400, loop=0)  # pyright: ignore[reportUnknownMemberType]
+                console.print(f"  -> Saved animation: {gif_path} ({len(frame_files)} frames)")
         except Exception as e:
             console.print(f"  [yellow]Warning: Could not create GIF: {e}[/yellow]")
 
