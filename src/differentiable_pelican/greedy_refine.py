@@ -126,6 +126,56 @@ def _unfreeze_shapes(shapes: list[Shape]) -> None:
             p.requires_grad_(True)
 
 
+def _generate_greedy_gif(output_dir: Path, final_png: Path) -> None:
+    """Generate a GIF showing progression through greedy refinement rounds."""
+    try:
+        import imageio.v3 as iio  # pyright: ignore[reportMissingImports]
+
+        # Collect frame PNGs: initial + each accepted round + final best
+        frame_paths: list[Path] = []
+
+        # Initial optimization frame
+        initial_frame = output_dir / "round_00_initial" / "optimized.png"
+        if initial_frame.exists():
+            frame_paths.append(initial_frame)
+
+        # Accepted round frames (sorted by round number)
+        round_dirs = sorted(output_dir.glob("round_*_accept_*"))
+        for rd in round_dirs:
+            frame = rd / "optimized.png"
+            if frame.exists():
+                frame_paths.append(frame)
+
+        # Final best-params frame (may differ from last round if best was earlier)
+        if final_png.exists():
+            frame_paths.append(final_png)
+
+        if len(frame_paths) < 2:
+            return
+
+        images = [iio.imread(str(f)) for f in frame_paths]  # pyright: ignore[reportUnknownMemberType]
+
+        # Convert grayscale to RGB if needed (match all frames to same format)
+        import numpy as np
+
+        processed = []
+        for img in images:
+            if img.ndim == 2:
+                img = np.stack([img, img, img], axis=-1)
+            elif img.shape[-1] == 4:
+                img = img[:, :, :3]
+            processed.append(img)
+
+        # 400ms per frame, hold final frame 1200ms
+        durations = [400] * (len(processed) - 1) + [1200]
+
+        gif_path = output_dir / "greedy_refinement.gif"
+        iio.imwrite(str(gif_path), processed, duration=durations, loop=0)  # pyright: ignore[reportUnknownMemberType]
+        console.print(f"  -> Saved greedy GIF: {gif_path} ({len(processed)} frames)")
+    except Exception as e:
+        console.print(f"  [yellow]Warning: Could not create greedy GIF: {e}[/yellow]")
+
+
 def greedy_refinement_loop(
     initial_shapes: list[Shape],
     shape_names: list[str],
@@ -329,6 +379,9 @@ def greedy_refinement_loop(
     final_svg = final_dir / "pelican_final.svg"
     save_render(shapes, resolution, resolution, tau, device, str(final_png))
     shapes_to_svg(shapes, resolution, resolution, final_svg)
+
+    # Generate GIF from round frames
+    _generate_greedy_gif(output_dir, final_png)
 
     # Save history
     history_path = output_dir / "greedy_history.json"

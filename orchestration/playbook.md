@@ -147,6 +147,7 @@ cp out/optimize/optimization.gif docs/results/02_optimization.gif
 cp out/greedy_refine/round_00_initial/optimized.png docs/results/03_greedy_initial.png
 cp out/greedy_refine/final/pelican_final.png docs/results/04_greedy_final.png
 cp out/greedy_refine/final/pelican_final.svg docs/results/04_greedy_final.svg
+cp out/greedy_refine/greedy_refinement.gif docs/results/04_greedy_refinement.gif
 ```
 
 **Check:** All files exist in `docs/results/` and match the latest run.

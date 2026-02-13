@@ -41,6 +41,10 @@ Two-phase trial per candidate:
 
 ![Greedy Initial](03_greedy_initial.png)
 
+**Greedy refinement animation** (initial → each accepted shape → final):
+
+![Greedy Refinement GIF](04_greedy_refinement.gif)
+
 **Final** (20 shapes, 11 added, 0 rejected):
 
 ![Greedy Final](04_greedy_final.png)
