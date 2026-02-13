@@ -3,8 +3,6 @@
 Gradient-based optimization of SVG primitives through a differentiable
 renderer, with optional LLM-guided structural refinement.
 
-![Greedy refinement, shape by shape](docs/results/05_greedy_extended.gif)
-
 The renderer is implemented entirely in
 [PyTorch](https://pytorch.org/) as soft
 [signed distance fields](https://iquilezles.org/articles/distfunctions2d/)
@@ -57,14 +55,18 @@ on quality degradation.
 
 ## Results
 
-Starting from 9 hand-coded shapes and a
-[vintage pelican engraving](images/pelican-drawing-1.jpg) as target,
-the pipeline optimizes via gradient descent (500 steps of Adam), then
-greedily adds shapes one at a time. Each candidate is frozen-then-settled
-(100 steps), then jointly re-optimized with all shapes (200 steps), and
-kept only if loss drops. All 26 greedy candidates were accepted.
+Target: a [vintage pelican engraving](images/pelican-drawing-1.jpg)
+(public domain).
 
-<img src="docs/results/pipeline_stages.svg" width="660" alt="Pipeline stages: initial, optimized, greedy refined"/>
+<img src="images/pelican-drawing-1.jpg" width="180" alt="Target pelican engraving"/>
+
+Starting from 9 hand-coded shapes, the pipeline optimizes via gradient
+descent (500 steps of Adam), then greedily adds shapes one at a time
+-- freeze existing, settle the newcomer (100 steps), re-optimize all
+jointly (200 steps), keep only if loss drops. All 26 greedy candidates
+were accepted. The full progression, initial through final:
+
+<img src="docs/results/pipeline_stages.svg" alt="Pipeline stages: initial through greedy rounds to final (35 shapes)"/>
 
 | Stage | Loss | Shapes | vs Baseline |
 |-------|------|--------|-------------|
@@ -72,14 +74,8 @@ kept only if loss drops. All 26 greedy candidates were accepted.
 | Optimized (500 steps) | 0.0351 | 9 | -- |
 | Greedy refined (35 shapes) | 0.0238 | 35 | -32% |
 
-Individual SVGs:
-[initial](docs/results/01_test_render.svg) |
-[optimized](docs/results/02_optimized.svg) |
-[greedy 20](docs/results/04_greedy_final.svg) |
-[greedy 35](docs/results/05_greedy_extended_final.svg)
-
 Per-round metrics in the [research log](docs/research-log.md).
-Full progression in [detailed results](docs/results/README.md).
+Full image progression in [detailed results](docs/results/README.md).
 
 ## Pipeline
 

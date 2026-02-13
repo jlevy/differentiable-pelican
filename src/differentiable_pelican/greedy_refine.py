@@ -13,7 +13,7 @@ from differentiable_pelican.geometry import Circle, Ellipse, Shape, Triangle
 from differentiable_pelican.loss import total_loss
 from differentiable_pelican.optimizer import load_target_image, optimize
 from differentiable_pelican.renderer import make_grid, render, save_render
-from differentiable_pelican.svg_export import shapes_to_svg
+from differentiable_pelican.svg_export import composite_stages_svg, shapes_to_svg
 
 console = Console()
 
@@ -174,6 +174,56 @@ def _generate_greedy_gif(output_dir: Path, final_png: Path) -> None:
         console.print(f"  -> Saved greedy GIF: {gif_path} ({len(processed)} frames)")
     except Exception as e:
         console.print(f"  [yellow]Warning: Could not create greedy GIF: {e}[/yellow]")
+
+
+def _generate_composite_svg(
+    output_dir: Path,
+    history: list[GreedyRoundRecord],
+    max_stages: int = 8,
+) -> None:
+    """Generate a composite SVG showing evenly-spaced pipeline stages."""
+    # Collect all available stage SVGs
+    stages: list[tuple[Path, str, str]] = []
+
+    # Initial optimization
+    initial_svg = output_dir / "round_00_initial" / "optimized.svg"
+    if initial_svg.exists():
+        stages.append((initial_svg, "Optimized", "9 shapes"))
+
+    # Accepted rounds
+    accepted = [r for r in history if r.get("accepted", False)]
+    for rec in accepted:
+        rnum = rec.get("round", 0)
+        stype = rec.get("shape_type", "unknown")
+        nshapes = rec.get("num_shapes", 0)
+        svg = output_dir / f"round_{rnum:02d}_accept_{stype}" / "optimized.svg"
+        if svg.exists():
+            stages.append((svg, f"Round {rnum}", f"{nshapes} shapes"))
+
+    if len(stages) < 2:
+        return
+
+    # Pick evenly-spaced subset if too many stages
+    if len(stages) > max_stages:
+        # Always include first and last; evenly sample the rest
+        indices = [0]
+        inner_count = max_stages - 2
+        for i in range(inner_count):
+            idx = int((i + 1) * (len(stages) - 1) / (inner_count + 1))
+            indices.append(idx)
+        indices.append(len(stages) - 1)
+        stages = [stages[i] for i in indices]
+
+    # Relabel the last stage as "Final"
+    path, _, sublabel = stages[-1]
+    stages[-1] = (path, "Final", sublabel)
+
+    composite_path = output_dir / "pipeline_stages.svg"
+    try:
+        composite_stages_svg(stages, composite_path)
+        console.print(f"  -> Saved composite SVG: {composite_path} ({len(stages)} stages)")
+    except Exception as e:
+        console.print(f"  [yellow]Warning: Could not create composite SVG: {e}[/yellow]")
 
 
 def greedy_refinement_loop(
@@ -382,6 +432,9 @@ def greedy_refinement_loop(
 
     # Generate GIF from round frames
     _generate_greedy_gif(output_dir, final_png)
+
+    # Generate composite SVG showing pipeline stages
+    _generate_composite_svg(output_dir, history)
 
     # Save history
     history_path = output_dir / "greedy_history.json"

@@ -1,77 +1,375 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 660 244">
-  <rect width="660" height="244" fill="white"/>
-
-  <!-- Stage 1: Initial geometry -->
-  <rect x="9" y="9" width="202" height="202" rx="2" fill="none" stroke="#ddd" stroke-width="1"/>
-  <svg x="10" y="10" width="200" height="200" viewBox="0 0 128 128">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1060 162">
+  <rect width="1060" height="162" fill="white"/>
+  <rect x="3.5" y="3.5" width="129" height="129" rx="1" fill="none" stroke="#ddd" stroke-width="0.5"/>
+  <svg x="4" y="4" width="128" height="128" viewBox="0 0 128 128">
     <rect width="128" height="128" fill="white"/>
-    <ellipse cx="53.76" cy="70.40" rx="28.16" ry="35.84" fill="rgb(89,89,89)" transform="rotate(-17.19 53.76 70.40)"/>
-    <ellipse cx="66.56" cy="44.80" rx="7.68" ry="19.20" fill="rgb(102,102,102)" transform="rotate(-11.46 66.56 44.80)"/>
-    <circle cx="74.24" cy="23.04" r="10.24" fill="rgb(89,89,89)"/>
-    <polygon points="79.36,19.20 79.36,28.16 112.64,25.60" fill="rgb(63,63,63)"/>
-    <polygon points="79.36,28.16 112.64,25.60 83.20,35.84" fill="rgb(76,76,76)"/>
-    <ellipse cx="48.64" cy="64.00" rx="23.04" ry="19.20" fill="rgb(76,76,76)" transform="rotate(-22.92 48.64 64.00)"/>
-    <polygon points="23.04,66.56 32.00,61.44 15.36,76.80" fill="rgb(51,51,51)"/>
-    <circle cx="76.80" cy="20.48" r="1.92" fill="rgb(12,12,12)"/>
-    <ellipse cx="57.60" cy="112.64" rx="7.68" ry="5.12" fill="rgb(38,38,38)" transform="rotate(0.00 57.60 112.64)"/>
+  
+  <ellipse cx="53.76" cy="70.40" rx="28.16" ry="35.84" fill="rgb(89,89,89)" transform="rotate(-17.19 53.76 70.40)"/>
+  
+  <ellipse cx="66.56" cy="44.80" rx="7.68" ry="19.20" fill="rgb(102,102,102)" transform="rotate(-11.46 66.56 44.80)"/>
+  
+  <circle cx="74.24" cy="23.04" r="10.24" fill="rgb(89,89,89)"/>
+  
+  <polygon points="79.36,19.20 79.36,28.16 112.64,25.60" fill="rgb(63,63,63)"/>
+  
+  <polygon points="79.36,28.16 112.64,25.60 83.20,35.84" fill="rgb(76,76,76)"/>
+  
+  <ellipse cx="48.64" cy="64.00" rx="23.04" ry="19.20" fill="rgb(76,76,76)" transform="rotate(-22.92 48.64 64.00)"/>
+  
+  <polygon points="23.04,66.56 32.00,61.44 15.36,76.80" fill="rgb(51,51,51)"/>
+  
+  <circle cx="76.80" cy="20.48" r="1.92" fill="rgb(12,12,12)"/>
+  
+  <ellipse cx="57.60" cy="112.64" rx="7.68" ry="5.12" fill="rgb(38,38,38)" transform="rotate(0.00 57.60 112.64)"/>
   </svg>
-  <text x="110" y="228" text-anchor="middle" font-family="system-ui, Helvetica, Arial, sans-serif" font-size="12" fill="#555">Initial (9 shapes)</text>
-
-  <!-- Stage 2: Gradient-optimized -->
-  <rect x="229" y="9" width="202" height="202" rx="2" fill="none" stroke="#ddd" stroke-width="1"/>
-  <svg x="230" y="10" width="200" height="200" viewBox="0 0 128 128">
+  <text x="68.0" y="147" text-anchor="middle" font-family="system-ui, Helvetica, Arial, sans-serif" font-size="9" font-weight="500" fill="#444">Initial</text>
+  <text x="68.0" y="158" text-anchor="middle" font-family="system-ui, Helvetica, Arial, sans-serif" font-size="7.5" fill="#888">9 shapes</text>
+  <rect x="135.5" y="3.5" width="129" height="129" rx="1" fill="none" stroke="#ddd" stroke-width="0.5"/>
+  <svg x="136" y="4" width="128" height="128" viewBox="0 0 128 128">
     <rect width="128" height="128" fill="white"/>
-    <ellipse cx="46.74" cy="72.60" rx="21.57" ry="20.61" fill="rgb(152,152,152)" transform="rotate(26.58 46.74 72.60)"/>
-    <ellipse cx="71.45" cy="65.55" rx="31.75" ry="11.46" fill="rgb(144,144,144)" transform="rotate(-42.75 71.45 65.55)"/>
-    <circle cx="78.43" cy="23.84" r="11.29" fill="rgb(148,148,148)"/>
-    <polygon points="88.24,19.26 74.87,32.90 118.63,54.10" fill="rgb(64,64,64)"/>
-    <polygon points="82.44,26.09 105.49,46.20 73.07,36.03" fill="rgb(131,131,131)"/>
-    <ellipse cx="56.48" cy="51.46" rx="24.34" ry="7.71" fill="rgb(128,128,128)" transform="rotate(-14.89 56.48 51.46)"/>
-    <polygon points="23.35,67.23 42.81,91.74 11.33,106.66" fill="rgb(111,111,111)"/>
-    <circle cx="80.02" cy="24.19" r="1.32" fill="rgb(13,13,13)"/>
-    <ellipse cx="58.21" cy="103.35" rx="15.57" ry="6.89" fill="rgb(61,61,61)" transform="rotate(36.62 58.21 103.35)"/>
+  
+  <ellipse cx="46.74" cy="72.60" rx="21.57" ry="20.61" fill="rgb(152,152,152)" transform="rotate(26.58 46.74 72.60)"/>
+  
+  <ellipse cx="71.45" cy="65.55" rx="31.75" ry="11.46" fill="rgb(144,144,144)" transform="rotate(-42.75 71.45 65.55)"/>
+  
+  <circle cx="78.43" cy="23.84" r="11.29" fill="rgb(148,148,148)"/>
+  
+  <polygon points="88.24,19.26 74.87,32.90 118.63,54.10" fill="rgb(64,64,64)"/>
+  
+  <polygon points="82.44,26.09 105.49,46.20 73.07,36.03" fill="rgb(131,131,131)"/>
+  
+  <ellipse cx="56.48" cy="51.46" rx="24.34" ry="7.71" fill="rgb(128,128,128)" transform="rotate(-14.89 56.48 51.46)"/>
+  
+  <polygon points="23.35,67.23 42.81,91.74 11.33,106.66" fill="rgb(111,111,111)"/>
+  
+  <circle cx="80.02" cy="24.19" r="1.32" fill="rgb(13,13,13)"/>
+  
+  <ellipse cx="58.21" cy="103.35" rx="15.57" ry="6.89" fill="rgb(61,61,61)" transform="rotate(36.62 58.21 103.35)"/>
   </svg>
-  <text x="330" y="228" text-anchor="middle" font-family="system-ui, Helvetica, Arial, sans-serif" font-size="12" fill="#555">Optimized (9 shapes)</text>
-
-  <!-- Stage 3: Greedy refinement -->
-  <rect x="449" y="9" width="202" height="202" rx="2" fill="none" stroke="#ddd" stroke-width="1"/>
-  <svg x="450" y="10" width="200" height="200" viewBox="0 0 128 128">
+  <text x="200.0" y="147" text-anchor="middle" font-family="system-ui, Helvetica, Arial, sans-serif" font-size="9" font-weight="500" fill="#444">Optimized</text>
+  <text x="200.0" y="158" text-anchor="middle" font-family="system-ui, Helvetica, Arial, sans-serif" font-size="7.5" fill="#888">9 shapes</text>
+  <rect x="267.5" y="3.5" width="129" height="129" rx="1" fill="none" stroke="#ddd" stroke-width="0.5"/>
+  <svg x="268" y="4" width="128" height="128" viewBox="0 0 128 128">
     <rect width="128" height="128" fill="white"/>
-    <ellipse cx="53.83" cy="67.91" rx="36.09" ry="20.80" fill="rgb(155,155,155)" transform="rotate(-31.23 53.83 67.91)"/>
-    <ellipse cx="86.92" cy="53.81" rx="13.74" ry="7.48" fill="rgb(145,145,145)" transform="rotate(-68.04 86.92 53.81)"/>
-    <circle cx="78.56" cy="23.50" r="10.98" fill="rgb(151,151,151)"/>
-    <polygon points="87.70,18.60 80.18,35.22 118.67,54.20" fill="rgb(62,62,62)"/>
-    <polygon points="89.97,27.99 103.09,45.20 89.56,39.46" fill="rgb(131,131,131)"/>
-    <ellipse cx="56.72" cy="48.35" rx="19.91" ry="4.69" fill="rgb(119,119,119)" transform="rotate(-13.79 56.72 48.35)"/>
-    <polygon points="17.50,80.95 42.66,91.23 12.57,107.00" fill="rgb(113,113,113)"/>
-    <circle cx="80.88" cy="18.75" r="1.14" fill="rgb(0,0,0)"/>
-    <ellipse cx="57.77" cy="104.16" rx="15.38" ry="4.72" fill="rgb(20,20,20)" transform="rotate(40.82 57.77 104.16)"/>
-    <circle cx="68.77" cy="22.27" r="2.66" fill="rgb(112,112,112)"/>
-    <ellipse cx="58.60" cy="73.52" rx="0.00" ry="0.01" fill="rgb(254,254,254)" transform="rotate(49.87 58.60 73.52)"/>
-    <polygon points="18.71,82.00 25.10,66.83 37.25,60.46" fill="rgb(85,85,85)"/>
-    <circle cx="16.42" cy="99.72" r="2.14" fill="rgb(0,0,0)"/>
-    <ellipse cx="49.25" cy="97.63" rx="8.76" ry="2.87" fill="rgb(53,53,53)" transform="rotate(-28.92 49.25 97.63)"/>
-    <polygon points="69.38,111.12 66.20,105.61 76.75,108.85" fill="rgb(0,0,0)"/>
-    <circle cx="85.35" cy="48.02" r="0.00" fill="rgb(0,0,0)"/>
-    <ellipse cx="34.12" cy="57.21" rx="9.44" ry="1.81" fill="rgb(82,82,82)" transform="rotate(-48.77 34.12 57.21)"/>
-    <polygon points="72.92,43.02 86.54,46.08 81.77,46.75" fill="rgb(0,0,0)"/>
-    <circle cx="85.75" cy="40.87" r="1.09" fill="rgb(0,0,0)"/>
-    <ellipse cx="51.31" cy="79.14" rx="12.87" ry="1.44" fill="rgb(42,42,42)" transform="rotate(-31.30 51.31 79.14)"/>
-    <polygon points="25.24,42.91 27.50,40.67 26.04,41.31" fill="rgb(254,254,254)"/>
-    <circle cx="80.53" cy="52.22" r="0.00" fill="rgb(0,0,0)"/>
-    <ellipse cx="74.03" cy="63.07" rx="0.12" ry="0.05" fill="rgb(0,0,0)" transform="rotate(-50.92 74.03 63.07)"/>
-    <polygon points="103.06,51.39 101.40,52.34 100.40,49.13" fill="rgb(254,254,254)"/>
-    <circle cx="57.88" cy="102.94" r="7.34" fill="rgb(45,45,45)"/>
-    <ellipse cx="78.44" cy="36.23" rx="7.88" ry="1.35" fill="rgb(106,106,106)" transform="rotate(-153.21 78.44 36.23)"/>
-    <polygon points="83.09,26.58 79.66,22.85 78.85,24.84" fill="rgb(0,0,0)"/>
-    <circle cx="70.50" cy="114.90" r="0.00" fill="rgb(0,0,0)"/>
-    <ellipse cx="85.30" cy="33.31" rx="4.51" ry="3.72" fill="rgb(141,141,141)" transform="rotate(44.19 85.30 33.31)"/>
-    <polygon points="35.16,55.37 34.08,60.00 32.95,57.61" fill="rgb(163,163,163)"/>
-    <circle cx="88.86" cy="35.69" r="0.00" fill="rgb(246,246,246)"/>
-    <ellipse cx="75.37" cy="66.71" rx="0.07" ry="0.07" fill="rgb(39,39,39)" transform="rotate(-82.66 75.37 66.71)"/>
-    <polygon points="102.04,58.88 97.93,60.22 99.82,59.66" fill="rgb(241,241,241)"/>
-    <circle cx="43.83" cy="56.31" r="0.43" fill="rgb(41,41,41)"/>
-    <ellipse cx="63.13" cy="73.40" rx="3.02" ry="0.87" fill="rgb(24,24,24)" transform="rotate(-34.19 63.13 73.40)"/>
+  
+  <ellipse cx="53.77" cy="67.76" rx="36.48" ry="20.85" fill="rgb(150,150,150)" transform="rotate(-30.99 53.77 67.76)"/>
+  
+  <ellipse cx="83.21" cy="56.34" rx="16.41" ry="9.23" fill="rgb(142,142,142)" transform="rotate(-51.14 83.21 56.34)"/>
+  
+  <circle cx="78.70" cy="23.75" r="11.19" fill="rgb(149,149,149)"/>
+  
+  <polygon points="88.07,19.27 73.92,35.44 117.90,52.96" fill="rgb(58,58,58)"/>
+  
+  <polygon points="88.16,25.14 104.05,46.85 72.22,34.12" fill="rgb(132,132,132)"/>
+  
+  <ellipse cx="54.41" cy="49.16" rx="20.93" ry="4.81" fill="rgb(112,112,112)" transform="rotate(-16.26 54.41 49.16)"/>
+  
+  <polygon points="17.99,80.02 42.21,91.50 12.76,106.80" fill="rgb(111,111,111)"/>
+  
+  <circle cx="80.08" cy="24.19" r="1.26" fill="rgb(1,1,1)"/>
+  
+  <ellipse cx="58.20" cy="103.34" rx="15.56" ry="6.90" fill="rgb(61,61,61)" transform="rotate(36.59 58.20 103.34)"/>
+  
+  <circle cx="68.74" cy="22.20" r="2.62" fill="rgb(112,112,112)"/>
+  
+  <ellipse cx="66.07" cy="65.92" rx="0.05" ry="0.18" fill="rgb(246,246,246)" transform="rotate(44.79 66.07 65.92)"/>
+  
+  <polygon points="19.52,79.35 32.74,55.06 37.69,60.85" fill="rgb(91,91,91)"/>
+  
+  <circle cx="18.85" cy="93.57" r="4.38" fill="rgb(73,73,73)"/>
   </svg>
-  <text x="550" y="228" text-anchor="middle" font-family="system-ui, Helvetica, Arial, sans-serif" font-size="12" fill="#555">Greedy refined (35 shapes)</text>
+  <text x="332.0" y="147" text-anchor="middle" font-family="system-ui, Helvetica, Arial, sans-serif" font-size="9" font-weight="500" fill="#444">Round 4</text>
+  <text x="332.0" y="158" text-anchor="middle" font-family="system-ui, Helvetica, Arial, sans-serif" font-size="7.5" fill="#888">13 shapes</text>
+  <rect x="399.5" y="3.5" width="129" height="129" rx="1" fill="none" stroke="#ddd" stroke-width="0.5"/>
+  <svg x="400" y="4" width="128" height="128" viewBox="0 0 128 128">
+    <rect width="128" height="128" fill="white"/>
+  
+  <ellipse cx="53.79" cy="67.85" rx="36.42" ry="20.78" fill="rgb(151,151,151)" transform="rotate(-30.74 53.79 67.85)"/>
+  
+  <ellipse cx="86.91" cy="53.67" rx="13.62" ry="7.56" fill="rgb(140,140,140)" transform="rotate(-68.64 86.91 53.67)"/>
+  
+  <circle cx="78.62" cy="23.66" r="11.10" fill="rgb(150,150,150)"/>
+  
+  <polygon points="88.22,19.26 75.12,32.97 118.54,54.05" fill="rgb(55,55,55)"/>
+  
+  <polygon points="87.11,24.31 103.99,46.12 71.33,35.02" fill="rgb(125,125,125)"/>
+  
+  <ellipse cx="56.97" cy="48.30" rx="20.07" ry="4.69" fill="rgb(116,116,116)" transform="rotate(-13.38 56.97 48.30)"/>
+  
+  <polygon points="17.63,80.45 42.38,91.37 12.55,107.02" fill="rgb(113,113,113)"/>
+  
+  <circle cx="79.99" cy="24.14" r="1.17" fill="rgb(0,0,0)"/>
+  
+  <ellipse cx="56.88" cy="102.16" rx="13.68" ry="6.91" fill="rgb(70,70,70)" transform="rotate(44.69 56.88 102.16)"/>
+  
+  <circle cx="68.74" cy="22.24" r="2.60" fill="rgb(112,112,112)"/>
+  
+  <ellipse cx="66.10" cy="65.92" rx="0.01" ry="0.04" fill="rgb(254,254,254)" transform="rotate(45.02 66.10 65.92)"/>
+  
+  <polygon points="19.59,79.36 30.91,57.75 37.74,60.70" fill="rgb(88,88,88)"/>
+  
+  <circle cx="16.42" cy="99.72" r="2.14" fill="rgb(0,0,0)"/>
+  
+  <ellipse cx="48.95" cy="98.85" rx="7.87" ry="2.72" fill="rgb(14,14,14)" transform="rotate(-16.01 48.95 98.85)"/>
+  
+  <polygon points="65.74,114.95 60.92,104.37 76.26,108.45" fill="rgb(10,10,10)"/>
+  
+  <circle cx="79.73" cy="46.89" r="2.90" fill="rgb(68,68,68)"/>
+  
+  <ellipse cx="36.42" cy="53.97" rx="5.56" ry="1.26" fill="rgb(68,68,68)" transform="rotate(-42.31 36.42 53.97)"/>
+  </svg>
+  <text x="464.0" y="147" text-anchor="middle" font-family="system-ui, Helvetica, Arial, sans-serif" font-size="9" font-weight="500" fill="#444">Round 8</text>
+  <text x="464.0" y="158" text-anchor="middle" font-family="system-ui, Helvetica, Arial, sans-serif" font-size="7.5" fill="#888">17 shapes</text>
+  <rect x="531.5" y="3.5" width="129" height="129" rx="1" fill="none" stroke="#ddd" stroke-width="0.5"/>
+  <svg x="532" y="4" width="128" height="128" viewBox="0 0 128 128">
+    <rect width="128" height="128" fill="white"/>
+  
+  <ellipse cx="53.88" cy="67.93" rx="36.10" ry="20.69" fill="rgb(154,154,154)" transform="rotate(-30.84 53.88 67.93)"/>
+  
+  <ellipse cx="86.80" cy="54.10" rx="13.66" ry="7.49" fill="rgb(145,145,145)" transform="rotate(-66.45 86.80 54.10)"/>
+  
+  <circle cx="78.69" cy="23.88" r="11.28" fill="rgb(147,147,147)"/>
+  
+  <polygon points="88.15,19.21 76.98,33.76 118.60,54.10" fill="rgb(49,49,49)"/>
+  
+  <polygon points="87.48,24.59 103.58,45.50 73.03,35.84" fill="rgb(125,125,125)"/>
+  
+  <ellipse cx="55.81" cy="48.62" rx="20.20" ry="4.75" fill="rgb(118,118,118)" transform="rotate(-14.83 55.81 48.62)"/>
+  
+  <polygon points="17.50,80.95 42.66,91.24 12.59,106.98" fill="rgb(113,113,113)"/>
+  
+  <circle cx="80.30" cy="24.42" r="1.47" fill="rgb(0,0,0)"/>
+  
+  <ellipse cx="56.91" cy="102.18" rx="13.69" ry="6.91" fill="rgb(69,69,69)" transform="rotate(44.60 56.91 102.18)"/>
+  
+  <circle cx="68.42" cy="22.21" r="2.24" fill="rgb(106,106,106)"/>
+  
+  <ellipse cx="59.41" cy="73.57" rx="0.01" ry="0.01" fill="rgb(254,254,254)" transform="rotate(32.61 59.41 73.57)"/>
+  
+  <polygon points="18.75,81.88 25.19,66.76 37.25,60.46" fill="rgb(83,83,83)"/>
+  
+  <circle cx="16.42" cy="99.72" r="2.13" fill="rgb(0,0,0)"/>
+  
+  <ellipse cx="48.89" cy="98.86" rx="7.80" ry="2.71" fill="rgb(13,13,13)" transform="rotate(-16.06 48.89 98.86)"/>
+  
+  <polygon points="65.74,114.92 61.62,104.53 76.21,108.47" fill="rgb(4,4,4)"/>
+  
+  <circle cx="85.37" cy="47.96" r="0.02" fill="rgb(0,0,0)"/>
+  
+  <ellipse cx="33.82" cy="57.62" rx="9.23" ry="1.89" fill="rgb(89,89,89)" transform="rotate(-49.10 33.82 57.62)"/>
+  
+  <polygon points="72.87,42.92 86.48,46.03 81.74,46.83" fill="rgb(0,0,0)"/>
+  
+  <circle cx="85.92" cy="41.54" r="1.13" fill="rgb(12,12,12)"/>
+  
+  <ellipse cx="53.94" cy="77.83" rx="14.37" ry="1.35" fill="rgb(39,39,39)" transform="rotate(-28.03 53.94 77.83)"/>
+  
+  <polygon points="25.68,45.85 29.40,45.85 27.86,45.86" fill="rgb(216,216,216)"/>
+  
+  <circle cx="80.98" cy="52.45" r="1.71" fill="rgb(110,110,110)"/>
+  </svg>
+  <text x="596.0" y="147" text-anchor="middle" font-family="system-ui, Helvetica, Arial, sans-serif" font-size="9" font-weight="500" fill="#444">Round 13</text>
+  <text x="596.0" y="158" text-anchor="middle" font-family="system-ui, Helvetica, Arial, sans-serif" font-size="7.5" fill="#888">22 shapes</text>
+  <rect x="663.5" y="3.5" width="129" height="129" rx="1" fill="none" stroke="#ddd" stroke-width="0.5"/>
+  <svg x="664" y="4" width="128" height="128" viewBox="0 0 128 128">
+    <rect width="128" height="128" fill="white"/>
+  
+  <ellipse cx="53.88" cy="67.85" rx="36.17" ry="20.82" fill="rgb(154,154,154)" transform="rotate(-31.28 53.88 67.85)"/>
+  
+  <ellipse cx="86.68" cy="54.16" rx="13.77" ry="7.58" fill="rgb(145,145,145)" transform="rotate(-65.97 86.68 54.16)"/>
+  
+  <circle cx="78.36" cy="23.05" r="10.60" fill="rgb(146,146,146)"/>
+  
+  <polygon points="87.80,18.70 79.84,35.27 118.59,54.11" fill="rgb(56,56,56)"/>
+  
+  <polygon points="87.94,25.15 103.43,45.39 75.21,36.75" fill="rgb(127,127,127)"/>
+  
+  <ellipse cx="55.76" cy="48.65" rx="20.29" ry="4.74" fill="rgb(119,119,119)" transform="rotate(-14.73 55.76 48.65)"/>
+  
+  <polygon points="17.48,81.03 42.72,91.22 12.52,107.04" fill="rgb(114,114,114)"/>
+  
+  <circle cx="79.97" cy="24.09" r="1.16" fill="rgb(1,1,1)"/>
+  
+  <ellipse cx="57.79" cy="104.19" rx="15.44" ry="4.71" fill="rgb(20,20,20)" transform="rotate(40.72 57.79 104.19)"/>
+  
+  <circle cx="67.95" cy="22.48" r="1.82" fill="rgb(99,99,99)"/>
+  
+  <ellipse cx="59.46" cy="73.55" rx="0.01" ry="0.01" fill="rgb(254,254,254)" transform="rotate(33.67 59.46 73.55)"/>
+  
+  <polygon points="18.46,82.49 25.09,66.80 37.26,60.44" fill="rgb(87,87,87)"/>
+  
+  <circle cx="16.43" cy="99.72" r="2.15" fill="rgb(0,0,0)"/>
+  
+  <ellipse cx="49.24" cy="97.66" rx="8.85" ry="2.86" fill="rgb(62,62,62)" transform="rotate(-28.60 49.24 97.66)"/>
+  
+  <polygon points="69.41,111.11 66.31,105.65 76.81,108.85" fill="rgb(0,0,0)"/>
+  
+  <circle cx="85.45" cy="48.06" r="0.00" fill="rgb(0,0,0)"/>
+  
+  <ellipse cx="33.85" cy="57.58" rx="9.02" ry="1.89" fill="rgb(90,90,90)" transform="rotate(-48.88 33.85 57.58)"/>
+  
+  <polygon points="72.86,43.01 86.54,46.10 81.71,46.65" fill="rgb(0,0,0)"/>
+  
+  <circle cx="85.87" cy="41.53" r="1.03" fill="rgb(0,0,0)"/>
+  
+  <ellipse cx="53.99" cy="77.79" rx="14.37" ry="1.35" fill="rgb(40,40,40)" transform="rotate(-27.97 53.99 77.79)"/>
+  
+  <polygon points="23.67,43.49 25.63,42.84 27.70,45.54" fill="rgb(254,254,254)"/>
+  
+  <circle cx="80.54" cy="52.29" r="0.01" fill="rgb(6,6,6)"/>
+  
+  <ellipse cx="74.06" cy="63.06" rx="0.35" ry="0.16" fill="rgb(9,9,9)" transform="rotate(-54.56 74.06 63.06)"/>
+  
+  <polygon points="98.71,47.96 102.27,51.25 100.70,49.22" fill="rgb(233,233,233)"/>
+  
+  <circle cx="57.89" cy="102.95" r="7.35" fill="rgb(47,47,47)"/>
+  
+  <ellipse cx="73.12" cy="32.14" rx="5.61" ry="1.76" fill="rgb(113,113,113)" transform="rotate(-130.43 73.12 32.14)"/>
+  </svg>
+  <text x="728.0" y="147" text-anchor="middle" font-family="system-ui, Helvetica, Arial, sans-serif" font-size="9" font-weight="500" fill="#444">Round 17</text>
+  <text x="728.0" y="158" text-anchor="middle" font-family="system-ui, Helvetica, Arial, sans-serif" font-size="7.5" fill="#888">26 shapes</text>
+  <rect x="795.5" y="3.5" width="129" height="129" rx="1" fill="none" stroke="#ddd" stroke-width="0.5"/>
+  <svg x="796" y="4" width="128" height="128" viewBox="0 0 128 128">
+    <rect width="128" height="128" fill="white"/>
+  
+  <ellipse cx="53.86" cy="67.90" rx="36.22" ry="20.80" fill="rgb(154,154,154)" transform="rotate(-31.24 53.86 67.90)"/>
+  
+  <ellipse cx="86.94" cy="53.77" rx="13.75" ry="7.48" fill="rgb(145,145,145)" transform="rotate(-68.17 86.94 53.77)"/>
+  
+  <circle cx="78.57" cy="23.51" r="10.98" fill="rgb(151,151,151)"/>
+  
+  <polygon points="87.69,18.58 80.26,35.21 118.69,54.23" fill="rgb(63,63,63)"/>
+  
+  <polygon points="89.90,27.92 103.21,45.36 90.00,39.45" fill="rgb(132,132,132)"/>
+  
+  <ellipse cx="55.70" cy="48.66" rx="20.23" ry="4.74" fill="rgb(119,119,119)" transform="rotate(-14.86 55.70 48.66)"/>
+  
+  <polygon points="17.50,80.98 42.67,91.23 12.54,107.03" fill="rgb(114,114,114)"/>
+  
+  <circle cx="80.87" cy="18.75" r="1.15" fill="rgb(0,0,0)"/>
+  
+  <ellipse cx="57.84" cy="104.27" rx="15.45" ry="4.68" fill="rgb(20,20,20)" transform="rotate(40.47 57.84 104.27)"/>
+  
+  <circle cx="68.79" cy="22.26" r="2.68" fill="rgb(113,113,113)"/>
+  
+  <ellipse cx="59.47" cy="73.58" rx="0.00" ry="0.01" fill="rgb(254,254,254)" transform="rotate(34.05 59.47 73.58)"/>
+  
+  <polygon points="18.61,82.09 25.17,66.76 37.27,60.45" fill="rgb(86,86,86)"/>
+  
+  <circle cx="16.42" cy="99.72" r="2.15" fill="rgb(0,0,0)"/>
+  
+  <ellipse cx="49.26" cy="97.64" rx="8.82" ry="2.85" fill="rgb(55,55,55)" transform="rotate(-28.95 49.26 97.64)"/>
+  
+  <polygon points="69.46,111.08 66.26,105.63 76.59,108.84" fill="rgb(0,0,0)"/>
+  
+  <circle cx="85.38" cy="48.05" r="0.00" fill="rgb(0,0,0)"/>
+  
+  <ellipse cx="33.94" cy="57.41" rx="9.10" ry="1.82" fill="rgb(82,82,82)" transform="rotate(-48.76 33.94 57.41)"/>
+  
+  <polygon points="72.87,42.97 86.53,46.11 81.73,46.70" fill="rgb(0,0,0)"/>
+  
+  <circle cx="85.70" cy="40.86" r="1.07" fill="rgb(0,0,0)"/>
+  
+  <ellipse cx="53.98" cy="77.80" rx="14.36" ry="1.35" fill="rgb(39,39,39)" transform="rotate(-27.98 53.98 77.80)"/>
+  
+  <polygon points="23.65,40.71 27.17,40.99 25.31,41.82" fill="rgb(254,254,254)"/>
+  
+  <circle cx="80.53" cy="52.25" r="0.00" fill="rgb(1,1,1)"/>
+  
+  <ellipse cx="74.04" cy="63.06" rx="0.17" ry="0.08" fill="rgb(0,0,0)" transform="rotate(-51.39 74.04 63.06)"/>
+  
+  <polygon points="101.18,48.96 98.93,46.81 103.22,47.25" fill="rgb(254,254,254)"/>
+  
+  <circle cx="57.89" cy="102.95" r="7.34" fill="rgb(46,46,46)"/>
+  
+  <ellipse cx="78.58" cy="36.28" rx="8.05" ry="1.36" fill="rgb(108,108,108)" transform="rotate(-153.49 78.58 36.28)"/>
+  
+  <polygon points="83.13,26.62 79.67,22.83 78.84,24.84" fill="rgb(1,1,1)"/>
+  
+  <circle cx="75.67" cy="108.88" r="0.07" fill="rgb(11,11,11)"/>
+  
+  <ellipse cx="85.34" cy="33.04" rx="4.51" ry="3.51" fill="rgb(143,143,143)" transform="rotate(29.42 85.34 33.04)"/>
+  
+  <polygon points="34.75,57.52 33.27,57.56 32.25,60.44" fill="rgb(138,138,138)"/>
+  
+  <circle cx="88.41" cy="37.16" r="0.83" fill="rgb(156,156,156)"/>
+  </svg>
+  <text x="860.0" y="147" text-anchor="middle" font-family="system-ui, Helvetica, Arial, sans-serif" font-size="9" font-weight="500" fill="#444">Round 22</text>
+  <text x="860.0" y="158" text-anchor="middle" font-family="system-ui, Helvetica, Arial, sans-serif" font-size="7.5" fill="#888">31 shapes</text>
+  <rect x="927.5" y="3.5" width="129" height="129" rx="1" fill="none" stroke="#ddd" stroke-width="0.5"/>
+  <svg x="928" y="4" width="128" height="128" viewBox="0 0 128 128">
+    <rect width="128" height="128" fill="white"/>
+  
+  <ellipse cx="53.83" cy="67.91" rx="36.09" ry="20.80" fill="rgb(155,155,155)" transform="rotate(-31.23 53.83 67.91)"/>
+  
+  <ellipse cx="86.92" cy="53.81" rx="13.74" ry="7.48" fill="rgb(145,145,145)" transform="rotate(-68.04 86.92 53.81)"/>
+  
+  <circle cx="78.56" cy="23.50" r="10.98" fill="rgb(151,151,151)"/>
+  
+  <polygon points="87.70,18.60 80.18,35.22 118.67,54.20" fill="rgb(62,62,62)"/>
+  
+  <polygon points="89.97,27.99 103.09,45.20 89.56,39.46" fill="rgb(131,131,131)"/>
+  
+  <ellipse cx="56.72" cy="48.35" rx="19.91" ry="4.69" fill="rgb(119,119,119)" transform="rotate(-13.79 56.72 48.35)"/>
+  
+  <polygon points="17.50,80.95 42.66,91.23 12.57,107.00" fill="rgb(113,113,113)"/>
+  
+  <circle cx="80.88" cy="18.75" r="1.14" fill="rgb(0,0,0)"/>
+  
+  <ellipse cx="57.77" cy="104.16" rx="15.38" ry="4.72" fill="rgb(20,20,20)" transform="rotate(40.82 57.77 104.16)"/>
+  
+  <circle cx="68.77" cy="22.27" r="2.66" fill="rgb(112,112,112)"/>
+  
+  <ellipse cx="58.60" cy="73.52" rx="0.00" ry="0.01" fill="rgb(254,254,254)" transform="rotate(49.87 58.60 73.52)"/>
+  
+  <polygon points="18.71,82.00 25.10,66.83 37.25,60.46" fill="rgb(85,85,85)"/>
+  
+  <circle cx="16.42" cy="99.72" r="2.14" fill="rgb(0,0,0)"/>
+  
+  <ellipse cx="49.25" cy="97.63" rx="8.76" ry="2.87" fill="rgb(53,53,53)" transform="rotate(-28.92 49.25 97.63)"/>
+  
+  <polygon points="69.38,111.12 66.20,105.61 76.75,108.85" fill="rgb(0,0,0)"/>
+  
+  <circle cx="85.35" cy="48.02" r="0.00" fill="rgb(0,0,0)"/>
+  
+  <ellipse cx="34.12" cy="57.21" rx="9.44" ry="1.81" fill="rgb(82,82,82)" transform="rotate(-48.77 34.12 57.21)"/>
+  
+  <polygon points="72.92,43.02 86.54,46.08 81.77,46.75" fill="rgb(0,0,0)"/>
+  
+  <circle cx="85.75" cy="40.87" r="1.09" fill="rgb(0,0,0)"/>
+  
+  <ellipse cx="51.31" cy="79.14" rx="12.87" ry="1.44" fill="rgb(42,42,42)" transform="rotate(-31.30 51.31 79.14)"/>
+  
+  <polygon points="25.24,42.91 27.50,40.67 26.04,41.31" fill="rgb(254,254,254)"/>
+  
+  <circle cx="80.53" cy="52.22" r="0.00" fill="rgb(0,0,0)"/>
+  
+  <ellipse cx="74.03" cy="63.07" rx="0.12" ry="0.05" fill="rgb(0,0,0)" transform="rotate(-50.92 74.03 63.07)"/>
+  
+  <polygon points="103.06,51.39 101.40,52.34 100.40,49.13" fill="rgb(254,254,254)"/>
+  
+  <circle cx="57.88" cy="102.94" r="7.34" fill="rgb(45,45,45)"/>
+  
+  <ellipse cx="78.44" cy="36.23" rx="7.88" ry="1.35" fill="rgb(106,106,106)" transform="rotate(-153.21 78.44 36.23)"/>
+  
+  <polygon points="83.09,26.58 79.66,22.85 78.85,24.84" fill="rgb(0,0,0)"/>
+  
+  <circle cx="70.50" cy="114.90" r="0.00" fill="rgb(0,0,0)"/>
+  
+  <ellipse cx="85.30" cy="33.31" rx="4.51" ry="3.72" fill="rgb(141,141,141)" transform="rotate(44.19 85.30 33.31)"/>
+  
+  <polygon points="35.16,55.37 34.08,60.00 32.95,57.61" fill="rgb(163,163,163)"/>
+  
+  <circle cx="88.86" cy="35.69" r="0.00" fill="rgb(246,246,246)"/>
+  
+  <ellipse cx="75.37" cy="66.71" rx="0.07" ry="0.07" fill="rgb(39,39,39)" transform="rotate(-82.66 75.37 66.71)"/>
+  
+  <polygon points="102.04,58.88 97.93,60.22 99.82,59.66" fill="rgb(241,241,241)"/>
+  
+  <circle cx="43.83" cy="56.31" r="0.43" fill="rgb(41,41,41)"/>
+  
+  <ellipse cx="63.13" cy="73.40" rx="3.02" ry="0.87" fill="rgb(24,24,24)" transform="rotate(-34.19 63.13 73.40)"/>
+  </svg>
+  <text x="992.0" y="147" text-anchor="middle" font-family="system-ui, Helvetica, Arial, sans-serif" font-size="9" font-weight="500" fill="#444">Final</text>
+  <text x="992.0" y="158" text-anchor="middle" font-family="system-ui, Helvetica, Arial, sans-serif" font-size="7.5" fill="#888">35 shapes</text>
 </svg>
