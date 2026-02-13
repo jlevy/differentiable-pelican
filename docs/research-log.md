@@ -167,13 +167,83 @@ ellipses are particularly effective for covering large tonal areas.
 
 ---
 
+## Experiment 4: Extended Greedy Refinement (35 shapes)
+
+**Date:** 2026-02-13
+**Commit:** `991871b`
+**Command:** `pelican greedy-refine --max-shapes 35 --settle-steps 100 --reoptimize-steps 200`
+
+**Setup:** Same greedy algorithm as Experiment 3, but with a higher shape
+budget (35 instead of 20). Tests whether adding more shapes continues to
+improve loss, or if returns diminish.
+
+**Results:**
+
+| Metric | Value |
+|--------|-------|
+| Final loss | 0.0238 |
+| Shapes | 35 (9 initial + 26 added) |
+| Accepted | 26/26 (100% acceptance) |
+| Rejected | 0 |
+| Improvement over baseline | 32% |
+| Improvement over 20-shape greedy | 8% |
+
+**Per-round breakdown:**
+
+| Round | Type | Loss Before | Loss After | Improvement | Decision |
+|-------|------|-------------|------------|-------------|----------|
+| 1 | circle | 0.0352 | 0.0350 | 0.0002 | Accepted |
+| 2 | ellipse | 0.0350 | 0.0349 | 0.0001 | Accepted |
+| 3 | triangle | 0.0349 | 0.0340 | 0.0009 | Accepted |
+| 4 | circle | 0.0341 | 0.0331 | 0.0010 | Accepted |
+| 5 | ellipse | 0.0333 | 0.0305 | 0.0028 | Accepted |
+| 6 | triangle | 0.0309 | 0.0290 | 0.0018 | Accepted |
+| 7 | circle | 0.0295 | 0.0290 | 0.0005 | Accepted |
+| 8 | ellipse | 0.0293 | 0.0286 | 0.0007 | Accepted |
+| 9 | triangle | 0.0289 | 0.0284 | 0.0005 | Accepted |
+| 10 | circle | 0.0286 | 0.0284 | 0.0002 | Accepted |
+| 11 | ellipse | 0.0286 | 0.0259 | 0.0027 | Accepted |
+| 12 | triangle | 0.0261 | 0.0260 | 0.0000 | Accepted |
+| 13 | circle | 0.0262 | 0.0260 | 0.0003 | Accepted |
+| 14 | ellipse | 0.0261 | 0.0260 | 0.0002 | Accepted |
+| 15 | triangle | 0.0261 | 0.0261 | 0.0000 | Accepted |
+| 16 | circle | 0.0262 | 0.0249 | 0.0013 | Accepted |
+| 17 | ellipse | 0.0252 | 0.0246 | 0.0006 | Accepted |
+| 18 | triangle | 0.0250 | 0.0243 | 0.0006 | Accepted |
+| 19 | circle | 0.0247 | 0.0246 | 0.0002 | Accepted |
+| 20 | ellipse | 0.0249 | 0.0240 | 0.0009 | Accepted |
+| 21 | triangle | 0.0244 | 0.0241 | 0.0003 | Accepted |
+| 22 | circle | 0.0245 | 0.0241 | 0.0004 | Accepted |
+| 23 | ellipse | 0.0244 | 0.0241 | 0.0003 | Accepted |
+| 24 | triangle | 0.0244 | 0.0242 | 0.0002 | Accepted |
+| 25 | circle | 0.0245 | 0.0240 | 0.0005 | Accepted |
+| 26 | ellipse | 0.0244 | 0.0238 | 0.0006 | Accepted |
+
+**Qualitative:** The pelican continues to improve with more shapes. The
+biggest gains are in the first 20 shapes (rounds 1-11), with diminishing
+but still positive returns from shapes 21-35. Two "plateau-breakers" at
+round 11 (ellipse, -0.0027) and round 16 (circle, -0.0013) suggest that
+certain shapes find critical missing coverage areas.
+
+**Key insights:**
+- 100% acceptance rate holds even at 35 shapes -- the greedy algorithm
+  remains effective at high shape counts
+- Returns diminish: rounds 1-11 improved by 0.0093 (avg 0.0008/round),
+  rounds 12-26 improved by 0.0021 (avg 0.0001/round)
+- The "plateau-breaker" pattern (small improvements then a jump) suggests
+  the loss landscape has local structure that occasional shapes can exploit
+- GIF animation now shows the full progression automatically
+
+---
+
 ## Summary: Algorithm Progression
 
 | Experiment | Strategy | Loss | Shapes | vs Baseline |
 |-----------|----------|------|--------|-------------|
 | 1. Baseline | Gradient only | 0.0351 | 9 | -- |
 | 2. LLM Refine | Batch edits + rollback | 0.0320 | 19 | -9% |
-| 3. Greedy | Drop-and-optimize | **0.0259** | **20** | **-26%** |
+| 3. Greedy (20) | Drop-and-optimize | 0.0259 | 20 | -26% |
+| 4. Greedy (35) | Drop-and-optimize | **0.0238** | **35** | **-32%** |
 
 ## Next Experiments to Try
 
@@ -189,3 +259,5 @@ ellipses are particularly effective for covering large tonal areas.
   add next (hybrid: LLM for strategy, gradient for placement)
 - **Longer optimization:** More settle steps (200+) and re-optimize steps
   (500+) to see if results improve further
+- **Higher shape budget:** Test 50+ shapes to find the point of diminishing
+  returns

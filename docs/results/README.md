@@ -68,6 +68,28 @@ Two-phase trial per candidate:
 | Greedy round 11 | 0.0259 | 20 | +ellipse, accepted (big improvement) |
 | **Greedy final** | **0.0259** | **20** | **26% better than optimize-only** |
 
+### 4. Extended Greedy Refinement (35 shapes)
+
+Same algorithm with a higher shape budget (35 instead of 20). 26 additional
+shapes added, 0 rejected. Loss dropped to **0.0238** (32% better than baseline).
+
+**Extended refinement animation:**
+
+![Extended Greedy GIF](05_greedy_extended.gif)
+
+**Final** (35 shapes):
+
+![Extended Greedy Final](05_greedy_extended_final.png)
+
+## Extended Metrics
+
+| Stage | Loss | Shapes | Notes |
+|-------|------|--------|-------|
+| Greedy round 16 | 0.0249 | 25 | +circle, plateau-breaker |
+| Greedy round 20 | 0.0240 | 29 | +ellipse |
+| Greedy round 26 | 0.0238 | 35 | +ellipse (final) |
+| **Extended final** | **0.0238** | **35** | **32% better than optimize-only** |
+
 ## Observations
 
 1. **Optimization works well**: 500 steps of gradient descent produces a
@@ -82,7 +104,11 @@ Two-phase trial per candidate:
    each shape. The greedy loop just decides WHAT to add (cycling through
    circle, ellipse, triangle). No API key required.
 
-4. **Key areas for further improvement**:
+4. **Diminishing but persistent returns**: Extending to 35 shapes still
+   improves loss (26% → 32% improvement), but returns diminish. Rounds 1-11
+   averaged 0.0008/round; rounds 12-26 averaged 0.0001/round.
+
+5. **Key areas for further improvement**:
    - Shape replacement: swap out the least-helpful shape for a different type
    - Error-guided placement: initialize new shapes near highest-error regions
    - LLM-guided shape selection: let an LLM suggest what to try next
