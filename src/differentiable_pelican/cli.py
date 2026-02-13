@@ -10,6 +10,7 @@ _COMMANDS = {
     "optimize": "Optimize geometry to match target",
     "judge": "Evaluate optimized SVG",
     "refine": "Full refinement loop with LLM",
+    "greedy-refine": "Greedy shape-dropping refinement (no LLM)",
 }
 
 console = Console()
@@ -54,6 +55,10 @@ def app() -> None:
         from differentiable_pelican.commands_refine import refine_command
 
         refine_command()
+    elif command == "greedy-refine":
+        from differentiable_pelican.commands_greedy_refine import greedy_refine_command
+
+        greedy_refine_command()
     else:
         err_console.print(f"[red]Error: Unknown command '{command}'[/red]")
         _print_usage()
