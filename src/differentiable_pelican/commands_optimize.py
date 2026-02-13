@@ -113,7 +113,7 @@ def optimize_command() -> None:
     ) as progress:
         task = progress.add_task("Optimizing", total=args.steps, loss=0.0)
 
-        def on_progress(step: int, total: int, breakdown: dict[str, float]) -> None:
+        def on_progress(step: int, _total: int, breakdown: dict[str, float]) -> None:
             progress.update(task, completed=step + 1, loss=breakdown["total"])
 
         metrics = optimize(

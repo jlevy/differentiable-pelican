@@ -17,7 +17,6 @@ def app() -> None:
         console.print("  validate-image  - Validate a rendered image using LLM")
         console.print("  test-render     - Render initial hard-coded geometry")
         console.print("  optimize        - Optimize geometry to match target")
-        console.print("  export          - Export parameters to SVG")
         console.print("  judge           - Evaluate optimized SVG")
         console.print("  refine          - Full refinement loop with LLM")
         sys.exit(1)
@@ -36,9 +35,6 @@ def app() -> None:
         from differentiable_pelican.commands_optimize import optimize_command
 
         optimize_command()
-    elif command == "export":
-        console.print("[yellow]export command not yet implemented[/yellow]")
-        sys.exit(1)
     elif command == "judge":
         from differentiable_pelican.commands_judge import judge_command
 

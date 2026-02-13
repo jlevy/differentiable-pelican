@@ -135,9 +135,6 @@ def coverage_from_sdf(sdf: torch.Tensor, tau: float) -> torch.Tensor:
 
 
 def test_sdf_circle_at_origin():
-    """
-    Test that a point at the circle center has negative distance (inside).
-    """
     points = torch.tensor([[0.5, 0.5]])
     center = torch.tensor([0.5, 0.5])
     radius = torch.tensor(0.2)
@@ -146,9 +143,6 @@ def test_sdf_circle_at_origin():
 
 
 def test_sdf_circle_outside():
-    """
-    Test that a point far from the circle has positive distance (outside).
-    """
     points = torch.tensor([[0.0, 0.0]])
     center = torch.tensor([0.5, 0.5])
     radius = torch.tensor(0.2)
@@ -157,9 +151,6 @@ def test_sdf_circle_outside():
 
 
 def test_sdf_circle_on_boundary():
-    """
-    Test that a point on the boundary has distance close to zero.
-    """
     points = torch.tensor([[0.7, 0.5]])
     center = torch.tensor([0.5, 0.5])
     radius = torch.tensor(0.2)
@@ -168,9 +159,6 @@ def test_sdf_circle_on_boundary():
 
 
 def test_sdf_ellipse_on_boundary():
-    """
-    Test that a point on the ellipse boundary has distance close to zero.
-    """
     points = torch.tensor([[0.7, 0.5]])
     center = torch.tensor([0.5, 0.5])
     radii = torch.tensor([0.2, 0.1])
@@ -180,9 +168,6 @@ def test_sdf_ellipse_on_boundary():
 
 
 def test_sdf_triangle_vertices():
-    """
-    Test that triangle vertices are on or near the boundary.
-    """
     vertices = torch.tensor([[0.3, 0.3], [0.7, 0.3], [0.5, 0.7]])
     # Check first vertex
     points = vertices[0:1]
@@ -191,18 +176,12 @@ def test_sdf_triangle_vertices():
 
 
 def test_coverage_sigmoid_range():
-    """
-    Test that coverage is in [0, 1].
-    """
     sdf_values = torch.tensor([-1.0, 0.0, 1.0])
     coverage = coverage_from_sdf(sdf_values, tau=1.0)
     assert torch.all((coverage >= 0) & (coverage <= 1))
 
 
 def test_coverage_inside_outside():
-    """
-    Test that negative SDF gives high coverage, positive gives low.
-    """
     sdf_inside = torch.tensor(-2.0)
     sdf_outside = torch.tensor(2.0)
     cov_inside = coverage_from_sdf(sdf_inside, tau=1.0)
@@ -212,9 +191,6 @@ def test_coverage_inside_outside():
 
 
 def test_sdf_triangle_cw_winding():
-    """
-    Test that triangle SDF works for clockwise winding order too.
-    """
     # CCW order
     vertices_ccw = torch.tensor([[0.3, 0.3], [0.7, 0.3], [0.5, 0.7]])
     # CW order (reversed)
@@ -229,9 +205,6 @@ def test_sdf_triangle_cw_winding():
 
 
 def test_sdf_triangle_gradient_flow():
-    """
-    Test that triangle SDF has gradients for optimization.
-    """
     vertices = torch.tensor([[0.3, 0.3], [0.7, 0.3], [0.5, 0.7]], requires_grad=True)
     point = torch.tensor([[0.5, 0.5]])
     sdf = sdf_triangle(point, vertices)

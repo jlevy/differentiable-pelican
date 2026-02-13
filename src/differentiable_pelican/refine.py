@@ -41,10 +41,7 @@ class RefinementResult(TypedDict):
 
 def _save_shapes_state(shapes: list[Shape]) -> list[dict[str, torch.Tensor]]:
     """Save a deep copy of all shape parameters for rollback."""
-    return [
-        {k: v.detach().clone() for k, v in shape.state_dict().items()}
-        for shape in shapes
-    ]
+    return [{k: v.detach().clone() for k, v in shape.state_dict().items()} for shape in shapes]
 
 
 def _restore_shapes_state(shapes: list[Shape], state: list[dict[str, torch.Tensor]]) -> None:
@@ -134,12 +131,14 @@ def refinement_loop(
             names = pre_round_names
             consecutive_failures += 1
 
-            round_history.append({
-                "round": round_num,
-                "metrics": metrics,
-                "rolled_back": True,
-                "num_shapes": len(shapes),
-            })
+            round_history.append(
+                {
+                    "round": round_num,
+                    "metrics": metrics,
+                    "rolled_back": True,
+                    "num_shapes": len(shapes),
+                }
+            )
 
             if consecutive_failures >= max_consecutive_failures:
                 console.print(
@@ -185,13 +184,15 @@ def refinement_loop(
                 and feedback.overall_quality > 0.7
             ):
                 console.print("  [green]Converged! Quality is acceptable.[/green]")
-                round_history.append({
-                    "round": round_num,
-                    "metrics": metrics,
-                    "feedback": feedback.model_dump(),
-                    "converged": True,
-                    "num_shapes": len(shapes),
-                })
+                round_history.append(
+                    {
+                        "round": round_num,
+                        "metrics": metrics,
+                        "feedback": feedback.model_dump(),
+                        "converged": True,
+                        "num_shapes": len(shapes),
+                    }
+                )
                 break
 
             # Architect proposes edits
@@ -216,23 +217,27 @@ def refinement_loop(
                 console.print(f"  [yellow]Edit application failed: {e}[/yellow]")
 
             # Record round
-            round_history.append({
-                "round": round_num,
-                "metrics": metrics,
-                "feedback": feedback.model_dump(),
-                "architect": arch_response.model_dump(),
-                "num_shapes": len(shapes),
-            })
+            round_history.append(
+                {
+                    "round": round_num,
+                    "metrics": metrics,
+                    "feedback": feedback.model_dump(),
+                    "architect": arch_response.model_dump(),
+                    "num_shapes": len(shapes),
+                }
+            )
 
             previous_loss = current_loss
 
         except Exception as e:
             console.print(f"  [red]Round {round_num} failed: {e}[/red]")
-            round_history.append({
-                "round": round_num,
-                "metrics": metrics,
-                "error": str(e),
-            })
+            round_history.append(
+                {
+                    "round": round_num,
+                    "metrics": metrics,
+                    "error": str(e),
+                }
+            )
             consecutive_failures += 1
             if consecutive_failures >= max_consecutive_failures:
                 break
@@ -242,8 +247,8 @@ def refinement_loop(
         try:
             _restore_shapes_state(shapes, best_shapes_state)
             names = best_names
-        except Exception:
-            pass  # Shape count may have changed; keep current
+        except Exception as e:
+            print(f"Warning: Could not restore best shapes: {e}")
 
     # Save final outputs
     final_dir = output_dir / "final"

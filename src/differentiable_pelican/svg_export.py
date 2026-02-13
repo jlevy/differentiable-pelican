@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import math
 from collections.abc import Sequence
 from pathlib import Path
 
@@ -63,7 +64,7 @@ def _shape_to_svg_element(shape: Shape, width: int, height: int) -> str:
         cy = float(params.cy.item()) * height
         rx = float(params.rx.item()) * width
         ry = float(params.ry.item()) * height
-        rotation_deg = float(params.rotation.item()) * 180.0 / 3.14159
+        rotation_deg = float(params.rotation.item()) * 180.0 / math.pi
 
         transform = f"rotate({rotation_deg:.2f} {cx:.2f} {cy:.2f})"
         return f'<ellipse cx="{cx:.2f}" cy="{cy:.2f}" rx="{rx:.2f}" ry="{ry:.2f}" fill="{fill}" transform="{transform}"/>'
@@ -90,9 +91,6 @@ def _shape_to_svg_element(shape: Shape, width: int, height: int) -> str:
 
 
 def test_export_svg_creates_file(tmp_path: Path):
-    """
-    Test that SVG export creates a file.
-    """
     import torch
 
     from differentiable_pelican.geometry import Circle
@@ -107,9 +105,6 @@ def test_export_svg_creates_file(tmp_path: Path):
 
 
 def test_export_svg_valid_xml(tmp_path: Path):
-    """
-    Test that exported SVG is valid XML.
-    """
     import xml.etree.ElementTree as ET
 
     import torch
@@ -131,9 +126,6 @@ def test_export_svg_valid_xml(tmp_path: Path):
 
 
 def test_export_svg_contains_shapes(tmp_path: Path):
-    """
-    Test that SVG contains expected shape elements.
-    """
     import torch
 
     from differentiable_pelican.geometry import Circle, Ellipse, Triangle
@@ -155,9 +147,6 @@ def test_export_svg_contains_shapes(tmp_path: Path):
 
 
 def test_svg_viewbox_correct(tmp_path: Path):
-    """
-    Test that SVG viewBox matches dimensions.
-    """
     import torch
 
     from differentiable_pelican.geometry import Circle

@@ -94,9 +94,7 @@ def optimize(
     optimizer = torch.optim.Adam(params, lr=lr)
 
     # Learning rate scheduler: warm up then cosine decay
-    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
-        optimizer, T_max=steps, eta_min=lr / 20
-    )
+    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=steps, eta_min=lr / 20)
 
     # Precompute grid
     grid = make_grid(resolution, resolution, device)
@@ -185,9 +183,6 @@ def optimize(
 
 
 def test_anneal_tau():
-    """
-    Test that tau anneals correctly.
-    """
     tau_0 = anneal_tau(0, 100, 1.0, 0.2)
     tau_mid = anneal_tau(50, 100, 1.0, 0.2)
     tau_end = anneal_tau(100, 100, 1.0, 0.2)
@@ -198,17 +193,11 @@ def test_anneal_tau():
 
 
 def test_anneal_tau_zero_steps():
-    """
-    Test that tau handles zero steps gracefully.
-    """
     tau = anneal_tau(0, 0, 1.0, 0.2)
     assert abs(tau - 0.2) < 1e-6
 
 
 def test_optimize_reduces_loss_simple_case():
-    """
-    Test that optimization reduces loss for a simple case.
-    """
     from differentiable_pelican.geometry import Circle
 
     device = torch.device("cpu")
@@ -233,9 +222,6 @@ def test_optimize_reduces_loss_simple_case():
 
 
 def test_optimize_with_progress_callback():
-    """
-    Test that progress callback is invoked during optimization.
-    """
     from differentiable_pelican.geometry import Circle
 
     device = torch.device("cpu")
@@ -249,11 +235,15 @@ def test_optimize_with_progress_callback():
 
     callback_calls: list[int] = []
 
-    def on_progress(step: int, total: int, breakdown: dict[str, float]) -> None:
+    def on_progress(step: int, _total: int, _breakdown: dict[str, float]) -> None:
         callback_calls.append(step)
 
     optimize(
-        [init_circle], target, resolution, steps=10, lr=0.05,
+        [init_circle],
+        target,
+        resolution,
+        steps=10,
+        lr=0.05,
         progress_callback=on_progress,
     )
 

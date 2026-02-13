@@ -22,7 +22,7 @@ def test_full_optimization_pipeline(tmp_path: Path) -> None:
     resolution = 64
     steps = 20
 
-    shapes, names = create_initial_pelican(device)
+    shapes, _names = create_initial_pelican(device)
     target_path = Path("images/pelican-drawing-1.jpg")
 
     if not target_path.exists():

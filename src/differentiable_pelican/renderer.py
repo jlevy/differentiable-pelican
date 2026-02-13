@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import numpy as np
 import torch
 from PIL import Image
 
@@ -78,15 +79,13 @@ def render_to_numpy(
     width: int,
     tau: float,
     device: torch.device,
-):
+) -> np.ndarray:
     """
     Render shapes and convert to numpy-compatible format.
 
     Returns:
         Numpy array of shape [H, W] with values in [0, 255] as uint8
     """
-    import numpy as np
-
     rendered = render(shapes, height, width, tau, device)
     # Convert to uint8 range
     rendered_np = (rendered.detach().cpu().numpy() * 255).astype(np.uint8)
@@ -113,27 +112,18 @@ def save_render(
 
 
 def test_make_grid_shape():
-    """
-    Test that grid has correct shape.
-    """
     device = torch.device("cpu")
     grid = make_grid(64, 128, device)
     assert grid.shape == (64, 128, 2)
 
 
 def test_make_grid_normalized():
-    """
-    Test that grid values are in [0, 1].
-    """
     device = torch.device("cpu")
     grid = make_grid(64, 64, device)
     assert torch.all((grid >= 0) & (grid <= 1))
 
 
 def test_make_grid_corners():
-    """
-    Test that grid corners have correct values.
-    """
     device = torch.device("cpu")
     grid = make_grid(64, 64, device)
     # Top-left corner should be close to (0, 0)
@@ -143,9 +133,6 @@ def test_make_grid_corners():
 
 
 def test_render_single_circle():
-    """
-    Test rendering a single circle.
-    """
     from differentiable_pelican.geometry import Circle
 
     device = torch.device("cpu")
@@ -162,9 +149,6 @@ def test_render_single_circle():
 
 
 def test_render_composite_shapes():
-    """
-    Test rendering multiple shapes.
-    """
     from differentiable_pelican.geometry import Circle
 
     device = torch.device("cpu")
@@ -183,9 +167,6 @@ def test_render_composite_shapes():
 
 
 def test_render_deterministic():
-    """
-    Test that rendering is deterministic.
-    """
     from differentiable_pelican.geometry import Circle
 
     device = torch.device("cpu")

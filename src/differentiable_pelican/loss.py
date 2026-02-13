@@ -7,6 +7,12 @@ import torch
 
 from differentiable_pelican.geometry import Circle, Ellipse, Shape, Triangle
 
+# SSIM constants (Wang et al., 2004).
+# C1, C2 stabilize the division with weak denominator.
+_SSIM_C1 = 0.01**2
+_SSIM_C2 = 0.03**2
+_SSIM_SIGMA = 1.5
+
 
 def mse_loss(rendered: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
     """
@@ -23,8 +29,12 @@ def edge_loss(rendered: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
     matching sharp boundaries and contours.
     """
     # Sobel kernels
-    sobel_x = torch.tensor([[-1, 0, 1], [-2, 0, 2], [-1, 0, 1]], dtype=torch.float32, device=rendered.device)
-    sobel_y = torch.tensor([[-1, -2, -1], [0, 0, 0], [1, 2, 1]], dtype=torch.float32, device=rendered.device)
+    sobel_x = torch.tensor(
+        [[-1, 0, 1], [-2, 0, 2], [-1, 0, 1]], dtype=torch.float32, device=rendered.device
+    )
+    sobel_y = torch.tensor(
+        [[-1, -2, -1], [0, 0, 0], [1, 2, 1]], dtype=torch.float32, device=rendered.device
+    )
 
     # Reshape for conv2d: [1, 1, 3, 3]
     sobel_x = sobel_x.view(1, 1, 3, 3)
@@ -41,27 +51,23 @@ def edge_loss(rendered: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
     t_gy = torch.nn.functional.conv2d(t, sobel_y, padding=1)
 
     # Gradient magnitude
-    r_mag = torch.sqrt(r_gx ** 2 + r_gy ** 2 + 1e-8)
-    t_mag = torch.sqrt(t_gx ** 2 + t_gy ** 2 + 1e-8)
+    r_mag = torch.sqrt(r_gx**2 + r_gy**2 + 1e-8)
+    t_mag = torch.sqrt(t_gx**2 + t_gy**2 + 1e-8)
 
     return torch.mean((r_mag - t_mag) ** 2)
 
 
-def ssim_loss(
-    rendered: torch.Tensor, target: torch.Tensor, window_size: int = 7
-) -> torch.Tensor:
+def ssim_loss(rendered: torch.Tensor, target: torch.Tensor, window_size: int = 7) -> torch.Tensor:
     """
     Structural similarity loss (1 - SSIM).
 
     Lower is better. Uses a Gaussian window for local statistics.
     """
-    C1 = 0.01 ** 2
-    C2 = 0.03 ** 2
-
     # Create Gaussian window
-    sigma = 1.5
-    coords = torch.arange(window_size, dtype=torch.float32, device=rendered.device) - window_size // 2
-    g = torch.exp(-coords ** 2 / (2 * sigma ** 2))
+    coords = (
+        torch.arange(window_size, dtype=torch.float32, device=rendered.device) - window_size // 2
+    )
+    g = torch.exp(-(coords**2) / (2 * _SSIM_SIGMA**2))
     window = g.unsqueeze(0) * g.unsqueeze(1)  # Outer product
     window = window / window.sum()
     window = window.view(1, 1, window_size, window_size)
@@ -75,8 +81,8 @@ def ssim_loss(
     mu_r = torch.nn.functional.conv2d(r, window, padding=pad)
     mu_t = torch.nn.functional.conv2d(t, window, padding=pad)
 
-    mu_r_sq = mu_r ** 2
-    mu_t_sq = mu_t ** 2
+    mu_r_sq = mu_r**2
+    mu_t_sq = mu_t**2
     mu_rt = mu_r * mu_t
 
     # Local variances
@@ -84,8 +90,8 @@ def ssim_loss(
     sigma_t_sq = torch.nn.functional.conv2d(t * t, window, padding=pad) - mu_t_sq
     sigma_rt = torch.nn.functional.conv2d(r * t, window, padding=pad) - mu_rt
 
-    ssim_map = ((2 * mu_rt + C1) * (2 * sigma_rt + C2)) / (
-        (mu_r_sq + mu_t_sq + C1) * (sigma_r_sq + sigma_t_sq + C2)
+    ssim_map = ((2 * mu_rt + _SSIM_C1) * (2 * sigma_rt + _SSIM_C2)) / (
+        (mu_r_sq + mu_t_sq + _SSIM_C1) * (sigma_r_sq + sigma_t_sq + _SSIM_C2)
     )
 
     return 1.0 - ssim_map.mean()
@@ -228,18 +234,12 @@ def total_loss(
 
 
 def test_mse_loss_zero_for_identical():
-    """
-    Test that MSE is zero for identical images.
-    """
     img = torch.rand(64, 64)
     loss = mse_loss(img, img)
     assert torch.abs(loss) < 1e-6
 
 
 def test_mse_loss_positive_for_different():
-    """
-    Test that MSE is positive for different images.
-    """
     img1 = torch.zeros(64, 64)
     img2 = torch.ones(64, 64)
     loss = mse_loss(img1, img2)
@@ -247,9 +247,6 @@ def test_mse_loss_positive_for_different():
 
 
 def test_mse_loss_has_gradient():
-    """
-    Test that MSE loss backpropagates.
-    """
     img1 = torch.rand(64, 64, requires_grad=True)
     img2 = torch.rand(64, 64)
     loss = mse_loss(img1, img2)
@@ -258,18 +255,12 @@ def test_mse_loss_has_gradient():
 
 
 def test_edge_loss_zero_for_identical():
-    """
-    Test that edge loss is zero for identical images.
-    """
     img = torch.rand(64, 64)
     loss = edge_loss(img, img)
     assert loss < 1e-5
 
 
 def test_edge_loss_detects_differences():
-    """
-    Test that edge loss is higher when edges differ.
-    """
     img1 = torch.zeros(64, 64)
     img1[20:40, 20:40] = 1.0  # Sharp box
     img2 = torch.zeros(64, 64)
@@ -278,18 +269,12 @@ def test_edge_loss_detects_differences():
 
 
 def test_ssim_loss_zero_for_identical():
-    """
-    Test that SSIM loss is near zero for identical images.
-    """
     img = torch.rand(64, 64)
     loss = ssim_loss(img, img)
     assert loss < 0.01
 
 
 def test_ssim_loss_high_for_different():
-    """
-    Test that SSIM loss is high for very different images.
-    """
     img1 = torch.zeros(64, 64)
     img2 = torch.ones(64, 64)
     loss = ssim_loss(img1, img2)
@@ -297,9 +282,6 @@ def test_ssim_loss_high_for_different():
 
 
 def test_perimeter_prior_larger_for_big_shapes():
-    """
-    Test that larger shapes have higher perimeter prior.
-    """
     device = torch.device("cpu")
     small_circle = Circle(cx=0.5, cy=0.5, radius=0.1, device=device)
     large_circle = Circle(cx=0.5, cy=0.5, radius=0.3, device=device)
@@ -311,9 +293,6 @@ def test_perimeter_prior_larger_for_big_shapes():
 
 
 def test_perimeter_prior_gradient_nonzero():
-    """
-    Test that perimeter prior has gradients.
-    """
     device = torch.device("cpu")
     circle = Circle(cx=0.5, cy=0.5, radius=0.2, device=device)
     prior = perimeter_prior([circle])
@@ -322,9 +301,6 @@ def test_perimeter_prior_gradient_nonzero():
 
 
 def test_total_loss_combines_components():
-    """
-    Test that total loss includes all components.
-    """
     device = torch.device("cpu")
     rendered = torch.rand(64, 64)
     target = torch.rand(64, 64)

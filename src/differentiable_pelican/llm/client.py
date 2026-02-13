@@ -14,8 +14,15 @@ from typing import Any
 import anthropic
 from dotenv import load_dotenv
 
-# Load environment variables
-load_dotenv(dotenv_path=Path(__file__).parent.parent.parent.parent / ".env.local")
+# Load environment variables from project root .env.local
+# Walk up from this file to find the project root (where pyproject.toml lives)
+_current = Path(__file__).resolve().parent
+for _ancestor in [_current] + list(_current.parents):
+    if (_ancestor / "pyproject.toml").exists():
+        _env_path = _ancestor / ".env.local"
+        if _env_path.exists():
+            load_dotenv(dotenv_path=_env_path)
+        break
 
 # Centralized model configuration
 DEFAULT_MODEL = "claude-sonnet-4-20250514"
@@ -75,9 +82,7 @@ def extract_json(text: str) -> dict[str, Any]:
                     except json.JSONDecodeError:
                         break
 
-    raise json.JSONDecodeError(
-        "Could not extract valid JSON from response", text, 0
-    )
+    raise json.JSONDecodeError("Could not extract valid JSON from response", text, 0)
 
 
 def llm_call(
@@ -181,7 +186,9 @@ def llm_call_json(
             last_error = e
             if attempt < max_retries:
                 # On JSON parse failure, add a system reminder and retry
-                system = (system or "") + "\n\nIMPORTANT: Respond with ONLY valid JSON. No markdown, no explanatory text."
+                system = (
+                    system or ""
+                ) + "\n\nIMPORTANT: Respond with ONLY valid JSON. No markdown, no explanatory text."
                 print("JSON parse failed, retrying with stricter prompt...")
             continue
 

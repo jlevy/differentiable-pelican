@@ -4,6 +4,7 @@ import base64
 import sys
 from pathlib import Path
 from textwrap import dedent
+from typing import Any
 
 from pydantic import BaseModel
 from rich.console import Console
@@ -73,7 +74,7 @@ def validate_image(
     image_b64 = encode_image_to_base64(image_path)
     image_media_type = get_image_media_type(image_path)
 
-    content_blocks: list[dict] = [  # pyright: ignore[reportMissingTypeArgument]
+    content_blocks: list[dict[str, Any]] = [
         {
             "type": "image",
             "source": {
