@@ -4,6 +4,9 @@ import json
 from pathlib import Path
 from typing import TypedDict
 
+import torch
+from rich.console import Console
+
 from differentiable_pelican.geometry import Shape
 from differentiable_pelican.llm.architect import architect_edits
 from differentiable_pelican.llm.edit_parser import parse_edits
@@ -11,6 +14,8 @@ from differentiable_pelican.llm.judge import judge_svg
 from differentiable_pelican.optimizer import OptimizationMetrics, load_target_image, optimize
 from differentiable_pelican.renderer import save_render
 from differentiable_pelican.svg_export import shapes_to_svg
+
+console = Console()
 
 
 class RefinementRoundRecord(TypedDict, total=False):
@@ -23,6 +28,7 @@ class RefinementRoundRecord(TypedDict, total=False):
     num_shapes: int
     converged: bool
     error: str
+    rolled_back: bool
 
 
 class RefinementResult(TypedDict):
@@ -31,6 +37,20 @@ class RefinementResult(TypedDict):
     rounds_completed: int
     history: list[RefinementRoundRecord]
     final_shapes: int
+
+
+def _save_shapes_state(shapes: list[Shape]) -> list[dict[str, torch.Tensor]]:
+    """Save a deep copy of all shape parameters for rollback."""
+    return [
+        {k: v.detach().clone() for k, v in shape.state_dict().items()}
+        for shape in shapes
+    ]
+
+
+def _restore_shapes_state(shapes: list[Shape], state: list[dict[str, torch.Tensor]]) -> None:
+    """Restore shape parameters from a saved state."""
+    for shape, saved in zip(shapes, state, strict=True):
+        shape.load_state_dict(saved)
 
 
 def refinement_loop(
@@ -42,9 +62,17 @@ def refinement_loop(
     max_rounds: int = 5,
     steps_per_round: int = 500,
     convergence_threshold: float = 0.01,
+    max_consecutive_failures: int = 2,
 ) -> RefinementResult:
     """
-    Multi-round refinement loop with LLM feedback.
+    Multi-round refinement loop with LLM feedback and rollback.
+
+    Each round:
+    1. Optimize shapes to match target (gradient descent)
+    2. Judge evaluates result (LLM)
+    3. Architect proposes structural edits (LLM)
+    4. Apply edits to shapes
+    5. If quality degrades, rollback to previous best
 
     Args:
         initial_shapes: Starting geometry
@@ -55,6 +83,7 @@ def refinement_loop(
         max_rounds: Maximum refinement rounds
         steps_per_round: Optimization steps per round
         convergence_threshold: Stop if improvement < threshold
+        max_consecutive_failures: Rollback limit before stopping
 
     Returns:
         Refinement metrics and history
@@ -64,26 +93,68 @@ def refinement_loop(
 
     shapes = initial_shapes
     names = shape_names
-    round_history = []
+    round_history: list[RefinementRoundRecord] = []
     previous_loss = float("inf")
+    best_loss = float("inf")
+    best_shapes_state: list[dict[str, torch.Tensor]] | None = None
+    best_names: list[str] | None = None
+    consecutive_failures = 0
 
     for round_num in range(max_rounds):
         round_dir = output_dir / f"round_{round_num:02d}"
         round_dir.mkdir(parents=True, exist_ok=True)
 
-        print(f"\n=== Round {round_num + 1}/{max_rounds} ===")
+        console.print(f"\n[bold cyan]=== Round {round_num + 1}/{max_rounds} ===[/bold cyan]")
+        console.print(f"  Shapes: {len(shapes)} ({', '.join(names)})")
+
+        # Save state before this round for potential rollback
+        pre_round_state = _save_shapes_state(shapes)
+        pre_round_names = list(names)
 
         # Optimize current geometry
-        print("Optimizing...")
+        console.print("  [cyan]Optimizing...[/cyan]")
         metrics = optimize(
             shapes,
             target,
             resolution,
             steps_per_round,
             lr=0.02,
-            save_every=None,  # Don't save intermediate frames for refinement
+            save_every=None,
             output_dir=None,
         )
+
+        current_loss = metrics["final_loss"]
+        console.print(f"  Loss: {current_loss:.6f} (prev: {previous_loss:.6f})")
+
+        # Check if this round improved over previous
+        if current_loss > previous_loss * 1.1 and best_shapes_state is not None:
+            # Quality degraded significantly - rollback
+            console.print("  [yellow]Quality degraded, rolling back...[/yellow]")
+            _restore_shapes_state(shapes, pre_round_state)
+            names = pre_round_names
+            consecutive_failures += 1
+
+            round_history.append({
+                "round": round_num,
+                "metrics": metrics,
+                "rolled_back": True,
+                "num_shapes": len(shapes),
+            })
+
+            if consecutive_failures >= max_consecutive_failures:
+                console.print(
+                    f"  [yellow]Stopping: {consecutive_failures} consecutive failures[/yellow]"
+                )
+                break
+            continue
+        else:
+            consecutive_failures = 0
+
+        # Update best state
+        if current_loss < best_loss:
+            best_loss = current_loss
+            best_shapes_state = _save_shapes_state(shapes)
+            best_names = list(names)
 
         # Save outputs
         tau = 0.5 / resolution
@@ -93,7 +164,7 @@ def refinement_loop(
         shapes_to_svg(shapes, resolution, resolution, svg_path)
 
         # Judge evaluation
-        print("Evaluating with judge...")
+        console.print("  [cyan]Evaluating with judge...[/cyan]")
         try:
             feedback = judge_svg(svg_path, png_path, target_path, metrics)
 
@@ -102,25 +173,29 @@ def refinement_loop(
             with feedback_path.open("w") as f:
                 json.dump(feedback.model_dump(), f, indent=2)
 
-            print(f"Quality: {feedback.overall_quality:.2f}")
-            print(f"Similarity: {feedback.similarity_to_target:.2f}")
+            console.print(f"  Quality: {feedback.overall_quality:.2f}")
+            console.print(f"  Similarity: {feedback.similarity_to_target:.2f}")
+            console.print(f"  Pelican: {'Yes' if feedback.resembles_pelican else 'No'}")
 
             # Check convergence
-            loss_improvement = previous_loss - metrics["final_loss"]
-            if feedback.ready_for_refinement and loss_improvement < convergence_threshold:
-                print("Converged! No major improvements needed.")
-                round_history.append(
-                    {
-                        "round": round_num,
-                        "metrics": metrics,
-                        "feedback": feedback.model_dump(),
-                        "converged": True,
-                    }
-                )
+            loss_improvement = previous_loss - current_loss
+            if (
+                feedback.ready_for_refinement
+                and abs(loss_improvement) < convergence_threshold
+                and feedback.overall_quality > 0.7
+            ):
+                console.print("  [green]Converged! Quality is acceptable.[/green]")
+                round_history.append({
+                    "round": round_num,
+                    "metrics": metrics,
+                    "feedback": feedback.model_dump(),
+                    "converged": True,
+                    "num_shapes": len(shapes),
+                })
                 break
 
             # Architect proposes edits
-            print("Generating edits with architect...")
+            console.print("  [cyan]Generating edits with architect...[/cyan]")
             arch_response = architect_edits(feedback)
 
             # Save architect response
@@ -128,36 +203,47 @@ def refinement_loop(
             with arch_path.open("w") as f:
                 json.dump(arch_response.model_dump(), f, indent=2)
 
-            print(f"Proposed {len(arch_response.actions)} edits")
-            print(f"Rationale: {arch_response.rationale[:100]}...")
+            console.print(f"  Proposed {len(arch_response.actions)} edits")
+            for action in arch_response.actions:
+                console.print(f"    - {action.type}: {action.shape}")
 
             # Apply edits
-            print("Applying edits...")
-            shapes, names = parse_edits(arch_response.actions, shapes, names)
+            console.print("  [cyan]Applying edits...[/cyan]")
+            try:
+                shapes, names = parse_edits(arch_response.actions, shapes, names)
+                console.print(f"  -> Now {len(shapes)} shapes: {', '.join(names)}")
+            except Exception as e:
+                console.print(f"  [yellow]Edit application failed: {e}[/yellow]")
 
             # Record round
-            round_history.append(
-                {
-                    "round": round_num,
-                    "metrics": metrics,
-                    "feedback": feedback.model_dump(),
-                    "architect": arch_response.model_dump(),
-                    "num_shapes": len(shapes),
-                }
-            )
+            round_history.append({
+                "round": round_num,
+                "metrics": metrics,
+                "feedback": feedback.model_dump(),
+                "architect": arch_response.model_dump(),
+                "num_shapes": len(shapes),
+            })
 
-            previous_loss = metrics["final_loss"]
+            previous_loss = current_loss
 
         except Exception as e:
-            print(f"Warning: Round {round_num} failed with error: {e}")
-            round_history.append(
-                {
-                    "round": round_num,
-                    "metrics": metrics,
-                    "error": str(e),
-                }
-            )
-            break
+            console.print(f"  [red]Round {round_num} failed: {e}[/red]")
+            round_history.append({
+                "round": round_num,
+                "metrics": metrics,
+                "error": str(e),
+            })
+            consecutive_failures += 1
+            if consecutive_failures >= max_consecutive_failures:
+                break
+
+    # Restore best shapes if we have them
+    if best_shapes_state is not None and best_names is not None:
+        try:
+            _restore_shapes_state(shapes, best_shapes_state)
+            names = best_names
+        except Exception:
+            pass  # Shape count may have changed; keep current
 
     # Save final outputs
     final_dir = output_dir / "final"
@@ -176,14 +262,16 @@ def refinement_loop(
             {
                 "rounds_completed": len(round_history),
                 "max_rounds": max_rounds,
+                "best_loss": best_loss,
                 "history": round_history,
             },
             f,
             indent=2,
         )
 
-    print(f"\n✓ Refinement complete! {len(round_history)} rounds")
-    print(f"Final outputs: {final_dir}")
+    console.print(f"\n[green]Refinement complete! {len(round_history)} rounds[/green]")
+    console.print(f"Best loss: {best_loss:.6f}")
+    console.print(f"Final outputs: {final_dir}")
 
     return {
         "rounds_completed": len(round_history),

@@ -7,7 +7,7 @@ from pathlib import Path
 
 from rich.console import Console
 from rich.panel import Panel
-from rich.progress import BarColumn, Progress, TextColumn, TimeRemainingColumn
+from rich.progress import BarColumn, Progress, SpinnerColumn, TextColumn, TimeRemainingColumn
 
 from differentiable_pelican.geometry import create_initial_pelican
 from differentiable_pelican.optimizer import load_target_image, optimize
@@ -81,7 +81,7 @@ def optimize_command() -> None:
             f"[bold]Differentiable Pelican - Optimize[/bold]\n\n"
             f"Target: {args.target}\n"
             f"Device: {device}\n"
-            f"Resolution: {resolution}×{resolution}\n"
+            f"Resolution: {resolution}x{resolution}\n"
             f"Steps: {args.steps}\n"
             f"Learning Rate: {args.lr}\n"
             f"Output: {output_dir}",
@@ -92,24 +92,29 @@ def optimize_command() -> None:
     # Load target
     console.print("\n[cyan]Loading target image...[/cyan]")
     target = load_target_image(args.target, resolution, device)
-    console.print(f"  ✓ Loaded {args.target}")
+    console.print(f"  -> Loaded {args.target}")
 
     # Create initial pelican
     console.print("\n[cyan]Creating initial pelican geometry...[/cyan]")
-    shapes = create_initial_pelican(device)
-    console.print(f"  ✓ Created {len(shapes)} shapes")
+    shapes, names = create_initial_pelican(device)
+    console.print(f"  -> Created {len(shapes)} shapes: {', '.join(names)}")
 
-    # Optimize with progress bar
+    # Optimize with live progress bar
     console.print("\n[cyan]Optimizing...[/cyan]")
 
     with Progress(
+        SpinnerColumn(),
         TextColumn("[progress.description]{task.description}"),
         BarColumn(),
         TextColumn("[progress.percentage]{task.percentage:>3.0f}%"),
         TimeRemainingColumn(),
+        TextColumn("loss: {task.fields[loss]:.4f}"),
         console=console,
     ) as progress:
-        task = progress.add_task("Optimizing", total=args.steps)
+        task = progress.add_task("Optimizing", total=args.steps, loss=0.0)
+
+        def on_progress(step: int, total: int, breakdown: dict[str, float]) -> None:
+            progress.update(task, completed=step + 1, loss=breakdown["total"])
 
         metrics = optimize(
             shapes,
@@ -119,9 +124,8 @@ def optimize_command() -> None:
             lr=args.lr,
             save_every=save_every,
             output_dir=output_dir,
+            progress_callback=on_progress,
         )
-
-        progress.update(task, completed=args.steps)
 
     # Save final outputs
     console.print("\n[cyan]Saving outputs...[/cyan]")
@@ -130,18 +134,18 @@ def optimize_command() -> None:
     tau = 0.5 / resolution
     png_path = output_dir / "pelican_optimized.png"
     save_render(shapes, resolution, resolution, tau, device, str(png_path))
-    console.print(f"  ✓ Saved PNG: {png_path}")
+    console.print(f"  -> Saved PNG: {png_path}")
 
     # Export SVG
     svg_path = output_dir / "pelican_optimized.svg"
     shapes_to_svg(shapes, resolution, resolution, svg_path)
-    console.print(f"  ✓ Saved SVG: {svg_path}")
+    console.print(f"  -> Saved SVG: {svg_path}")
 
     # Save metrics
     metrics_path = output_dir / "metrics.json"
     with metrics_path.open("w") as f:
         json.dump(metrics, f, indent=2)
-    console.print(f"  ✓ Saved metrics: {metrics_path}")
+    console.print(f"  -> Saved metrics: {metrics_path}")
 
     # Generate animation if frames were saved
     if save_every:
@@ -155,12 +159,12 @@ def optimize_command() -> None:
                 gif_path = output_dir / "optimization.gif"
                 images = [iio.imread(str(f)) for f in frame_files]  # pyright: ignore[reportUnknownMemberType]
                 iio.imwrite(str(gif_path), images, duration=100, loop=0)  # pyright: ignore[reportUnknownMemberType]
-                console.print(f"  ✓ Saved animation: {gif_path}")
+                console.print(f"  -> Saved animation: {gif_path}")
         except Exception as e:
             console.print(f"  [yellow]Warning: Could not create GIF: {e}[/yellow]")
 
     # Print final stats
-    console.print("\n[green]✓ Optimization complete![/green]")
+    console.print("\n[green]Optimization complete![/green]")
     console.print(f"\nFinal Loss: {metrics['final_loss']:.6f}")
     console.print(f"Steps Completed: {metrics['steps_completed']}")
     console.print(f"\nOutputs:\n  PNG: {png_path}\n  SVG: {svg_path}\n  Metrics: {metrics_path}")

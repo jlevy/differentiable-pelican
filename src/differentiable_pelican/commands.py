@@ -54,8 +54,8 @@ def render_test_command() -> None:
 
     # Create initial pelican
     console.print("\n[cyan]Creating initial pelican geometry...[/cyan]")
-    shapes = create_initial_pelican(device)
-    console.print(f"  ✓ Created {len(shapes)} shapes")
+    shapes, names = create_initial_pelican(device)
+    console.print(f"  -> Created {len(shapes)} shapes: {', '.join(names)}")
 
     # Render to PNG
     console.print("\n[cyan]Rendering to PNG...[/cyan]")

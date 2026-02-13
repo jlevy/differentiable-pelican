@@ -108,8 +108,8 @@ def sdf_triangle(points: torch.Tensor, vertices: torch.Tensor) -> torch.Tensor:
     c1 = cross_2d(e1, v_to_p1)
     c2 = cross_2d(e2, v_to_p2)
 
-    # Inside if all cross products have same sign (assuming CCW winding)
-    inside = (c0 > 0) & (c1 > 0) & (c2 > 0)
+    # Inside if all cross products have same sign (works for both CW and CCW winding)
+    inside = ((c0 > 0) & (c1 > 0) & (c2 > 0)) | ((c0 < 0) & (c1 < 0) & (c2 < 0))
 
     # Apply sign
     return torch.where(inside, -min_dist, min_dist)
@@ -209,3 +209,32 @@ def test_coverage_inside_outside():
     cov_outside = coverage_from_sdf(sdf_outside, tau=1.0)
     assert cov_inside > 0.85
     assert cov_outside < 0.15
+
+
+def test_sdf_triangle_cw_winding():
+    """
+    Test that triangle SDF works for clockwise winding order too.
+    """
+    # CCW order
+    vertices_ccw = torch.tensor([[0.3, 0.3], [0.7, 0.3], [0.5, 0.7]])
+    # CW order (reversed)
+    vertices_cw = torch.tensor([[0.5, 0.7], [0.7, 0.3], [0.3, 0.3]])
+
+    # Center point should be inside for both winding orders
+    center = torch.tensor([[0.5, 0.43]])
+    sdf_ccw = sdf_triangle(center, vertices_ccw)
+    sdf_cw = sdf_triangle(center, vertices_cw)
+    assert sdf_ccw[0] < 0, "Center should be inside triangle (CCW)"
+    assert sdf_cw[0] < 0, "Center should be inside triangle (CW)"
+
+
+def test_sdf_triangle_gradient_flow():
+    """
+    Test that triangle SDF has gradients for optimization.
+    """
+    vertices = torch.tensor([[0.3, 0.3], [0.7, 0.3], [0.5, 0.7]], requires_grad=True)
+    point = torch.tensor([[0.5, 0.5]])
+    sdf = sdf_triangle(point, vertices)
+    sdf.sum().backward()
+    assert vertices.grad is not None
+    assert not torch.all(vertices.grad == 0)

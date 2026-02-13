@@ -37,16 +37,25 @@ def shapes_to_svg(
     output_path.write_text(svg_content)
 
 
+def _intensity_to_fill(shape: Shape) -> str:
+    """Convert a shape's intensity parameter to an SVG fill color string."""
+    val = int(float(shape.intensity.item()) * 255)
+    val = max(0, min(255, val))
+    return f"rgb({val},{val},{val})"
+
+
 def _shape_to_svg_element(shape: Shape, width: int, height: int) -> str:
     """
     Convert a single shape to SVG element string.
     """
+    fill = _intensity_to_fill(shape)
+
     if isinstance(shape, Circle):
         params = shape.get_params()
         cx = float(params.cx.item()) * width
         cy = float(params.cy.item()) * height
         r = float(params.radius.item()) * width
-        return f'<circle cx="{cx:.2f}" cy="{cy:.2f}" r="{r:.2f}" fill="black"/>'
+        return f'<circle cx="{cx:.2f}" cy="{cy:.2f}" r="{r:.2f}" fill="{fill}"/>'
 
     elif isinstance(shape, Ellipse):
         params = shape.get_params()
@@ -56,9 +65,8 @@ def _shape_to_svg_element(shape: Shape, width: int, height: int) -> str:
         ry = float(params.ry.item()) * height
         rotation_deg = float(params.rotation.item()) * 180.0 / 3.14159
 
-        # Apply rotation as transform around center
         transform = f"rotate({rotation_deg:.2f} {cx:.2f} {cy:.2f})"
-        return f'<ellipse cx="{cx:.2f}" cy="{cy:.2f}" rx="{rx:.2f}" ry="{ry:.2f}" fill="black" transform="{transform}"/>'
+        return f'<ellipse cx="{cx:.2f}" cy="{cy:.2f}" rx="{rx:.2f}" ry="{ry:.2f}" fill="{fill}" transform="{transform}"/>'
 
     elif isinstance(shape, Triangle):
         params = shape.get_params()
@@ -72,7 +80,7 @@ def _shape_to_svg_element(shape: Shape, width: int, height: int) -> str:
         x2, y2 = float(v2[0].item()) * width, float(v2[1].item()) * height
 
         points = f"{x0:.2f},{y0:.2f} {x1:.2f},{y1:.2f} {x2:.2f},{y2:.2f}"
-        return f'<polygon points="{points}" fill="black"/>'
+        return f'<polygon points="{points}" fill="{fill}"/>'
 
     else:
         raise ValueError(f"Unknown shape type: {type(shape)}")

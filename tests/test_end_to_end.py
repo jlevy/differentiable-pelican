@@ -22,7 +22,7 @@ def test_full_optimization_pipeline(tmp_path: Path) -> None:
     resolution = 64
     steps = 20
 
-    shapes = create_initial_pelican(device)
+    shapes, names = create_initial_pelican(device)
     target_path = Path("images/pelican-drawing-1.jpg")
 
     if not target_path.exists():
@@ -76,7 +76,7 @@ def test_pelican_optimization_with_validation(tmp_path: Path) -> None:
     resolution = 128
     steps = 50
 
-    shapes = create_initial_pelican(device)
+    shapes, _names = create_initial_pelican(device)
     target_path = Path("images/pelican-drawing-1.jpg")
 
     if not target_path.exists():
@@ -123,9 +123,6 @@ def test_pelican_optimization_with_validation(tmp_path: Path) -> None:
     assert validation.description, "Should have a description from the LLM"
     assert validation.similarity_to_target is not None, "Should have similarity score"
 
-    # These quality checks are relaxed since this is testing API integration, not optimization quality
-    # The actual optimization may need improvement to produce pelican-like results
-
 
 @pytest.mark.slow
 def test_higher_resolution_optimization(tmp_path: Path) -> None:
@@ -136,7 +133,7 @@ def test_higher_resolution_optimization(tmp_path: Path) -> None:
     resolution = 256
     steps = 30
 
-    shapes = create_initial_pelican(device)
+    shapes, _names = create_initial_pelican(device)
     target_path = Path("images/pelican-drawing-1.jpg")
 
     if not target_path.exists():

@@ -65,8 +65,9 @@ def render(
         coverage = coverage_from_sdf(sdf, tau)
 
         # Alpha-over: out = (1 - alpha) * out + alpha * color
-        # Black ink (0.0) over white background
-        out = (1 - coverage) * out + coverage * 0.0
+        # Use shape's optimizable intensity (0.0 = black, 1.0 = white)
+        color = shape.intensity
+        out = (1 - coverage) * out + coverage * color
 
     return out
 
