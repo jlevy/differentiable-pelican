@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 import json
 from pathlib import Path
 from typing import TypedDict
@@ -93,7 +94,7 @@ def refinement_loop(
     round_history: list[RefinementRoundRecord] = []
     previous_loss = float("inf")
     best_loss = float("inf")
-    best_shapes_state: list[dict[str, torch.Tensor]] | None = None
+    best_shapes: list[Shape] | None = None
     best_names: list[str] | None = None
     consecutive_failures = 0
 
@@ -124,7 +125,7 @@ def refinement_loop(
         console.print(f"  Loss: {current_loss:.6f} (prev: {previous_loss:.6f})")
 
         # Check if this round improved over previous
-        if current_loss > previous_loss * 1.1 and best_shapes_state is not None:
+        if current_loss > previous_loss * 1.1 and best_shapes is not None:
             # Quality degraded significantly - rollback
             console.print("  [yellow]Quality degraded, rolling back...[/yellow]")
             _restore_shapes_state(shapes, pre_round_state)
@@ -149,10 +150,10 @@ def refinement_loop(
         else:
             consecutive_failures = 0
 
-        # Update best state
+        # Update best state (deep copy shapes to handle topology changes)
         if current_loss < best_loss:
             best_loss = current_loss
-            best_shapes_state = _save_shapes_state(shapes)
+            best_shapes = copy.deepcopy(shapes)
             best_names = list(names)
 
         # Save outputs
@@ -242,22 +243,10 @@ def refinement_loop(
             if consecutive_failures >= max_consecutive_failures:
                 break
 
-    # Restore best shapes if we have them and shape counts match
-    if best_shapes_state is not None and best_names is not None:
-        if len(shapes) == len(best_shapes_state):
-            try:
-                _restore_shapes_state(shapes, best_shapes_state)
-                names = best_names
-            except Exception as e:
-                print(f"Warning: Could not restore best shapes: {e}")
-        else:
-            # Shape count changed (edits added/removed shapes). The current shapes
-            # may not match the best state's topology, so we keep current shapes
-            # but log the discrepancy.
-            print(
-                f"Note: Shape count changed ({len(best_shapes_state)} -> {len(shapes)}), "
-                f"using current shapes for final output."
-            )
+    # Restore best shapes (deep copies handle topology changes correctly)
+    if best_shapes is not None and best_names is not None:
+        shapes = best_shapes
+        names = best_names
 
     # Save final outputs
     final_dir = output_dir / "final"

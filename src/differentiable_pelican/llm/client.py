@@ -25,7 +25,7 @@ for _ancestor in [_current] + list(_current.parents):
         break
 
 # Centralized model configuration
-DEFAULT_MODEL = "claude-sonnet-4-20250514"
+DEFAULT_MODEL = "claude-sonnet-4-5-20250929"
 
 
 def get_client() -> anthropic.Anthropic:

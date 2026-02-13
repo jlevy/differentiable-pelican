@@ -30,13 +30,13 @@ Optimization animation:
 
 ### 3. Refinement Loop (LLM Judge + Architect)
 
-Multi-round refinement with Claude Sonnet 4 judge and architect:
+Multi-round refinement with Claude Sonnet 4.5 judge and architect:
 
 **Round 1** (post-optimization, before LLM edits):
 
 ![Round 0](03_refine_round0.png)
 
-**Final** (after 4 rounds, 2 rollbacks):
+**Final** (best from 5 rounds, restored via deep copy):
 
 ![Final](04_refine_final.png)
 
@@ -47,18 +47,21 @@ Multi-round refinement with Claude Sonnet 4 judge and architect:
 | Test render | N/A | 9 | Initial hard-coded geometry |
 | Optimize (500 steps) | 0.0351 | 9 | Best single-run result |
 | Refine round 1 | 0.0382 | 9 | First optimization in refinement |
-| Refine round 2 | 0.0401 | 10 | LLM added throat_pouch |
-| Refine round 3 | 0.0722 | 12 | Degraded, rolled back |
-| Refine final | 0.0382 | 12 | Best from round 1 (shape count mismatch) |
+| Refine round 2 | 0.0342 | 14 | LLM added 5 shapes, loss improved |
+| Refine round 3 | 0.0326 | 18 | Further additions, continued improvement |
+| Refine round 4 | 0.0320 | 19 | Best loss achieved |
+| Refine round 5 | 0.0337 | 19 | Slight regression |
+| Refine final | 0.0320 | 19 | Best shapes restored via deep copy |
 
 ## Observations
 
 1. **Optimization works well**: 500 steps of gradient descent produces a
    recognizable pelican silhouette from the initial geometry.
 
-2. **LLM refinement needs improvement**: The architect's edits (adding duplicate
-   shapes, overlapping primitives) currently degrade quality. The rollback
-   mechanism correctly catches this.
+2. **Refinement loop improving**: The architect adds meaningful shapes
+   (throat_pouch, wing_feathers, webbed_foot) and loss steadily decreases
+   across rounds. Best-state deep copy ensures the final output always uses
+   the highest-quality shapes regardless of topology changes.
 
 3. **Key areas for improvement**:
    - Architect prompt needs more context about current shape layout

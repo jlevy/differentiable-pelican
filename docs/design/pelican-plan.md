@@ -270,7 +270,7 @@ two segments”).
 
 **2.1 Judge Component**
 
-- Multimodal LLM (Claude Sonnet 4) evaluates:
+- Multimodal LLM (Claude Sonnet 4.5) evaluates:
 
   - Current SVG code
 
@@ -416,6 +416,10 @@ differentiable-pelican/
 │   ├── design/
 │   │   ├── pelican-plan.md         # this document
 │   │   └── implementation-progress.md  # implementation status
+│   ├── project/
+│   │   └── specs/active/
+│   │       └── plan-2026-01-15-differentiable-pelican.md  # tbd plan spec
+│   ├── results/                    # pipeline output images and metrics
 │   ├── development.md              # developer workflows
 │   ├── installation.md             # uv/Python install guide
 │   └── publishing.md               # PyPI publishing guide
@@ -536,9 +540,6 @@ uv run pelican test-render
 # Renders initial hard-coded geometry, no optimization
 ```
 
-*Note: The `export` command was planned but not implemented; SVG export is
-integrated into the optimize and refine commands.*
-
 ### Phase 2 Commands
 
 **Full refinement loop**:
@@ -548,7 +549,7 @@ uv run pelican refine \
   --rounds 5 \
   --phase1-steps 500 \
   --llm-provider anthropic \
-  --llm-model claude-sonnet-4-20250514 \
+  --llm-model claude-sonnet-4-5-20250929 \
   --output-dir out/refined_001
 ```
 
@@ -635,7 +636,7 @@ enabling automated validation during development.
 - [ ] Simple CLI: `pelican validate-image --image path/to/render.png
   [--target path/to/target.jpg]`
 
-- [ ] Multimodal LLM prompt (Claude Sonnet 4):
+- [ ] Multimodal LLM prompt (Claude Sonnet 4.5):
 
   - Describe what shapes/objects are visible in the image
 
@@ -1055,14 +1056,10 @@ The judge extends validation with SVG-aware structural feedback.
 
 - [ ] Handle API errors gracefully (rate limits, network issues, timeouts)
 
-- [ ] ~~Add `--llm-provider` flag~~ *v2: Uses Anthropic exclusively via shared client*
-
 - [ ] Add `--dry-run` mode (show prompt without calling API)
 
 - [ ] Enforce strict response schema with Pydantic; retry on parse failure with a
-  “respond with only JSON” system reminder and a shorter temperature.
-
-- [ ] Provide a `--dry-run` flag to print the prompt and exit without API calls.
+  "respond with only JSON" system reminder and a shorter temperature.
 
 **Unit Tests** (`tests/llm/test_judge.py`):
 ```python

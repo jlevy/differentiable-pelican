@@ -36,8 +36,8 @@ We solve this by parameterizing shapes with continuous variables, rendering via
 differentiable soft SDFs, and backpropagating through the rasterized image. An LLM
 handles the discrete structural decisions that gradient descent cannot discover.
 
-See [pelican-plan.md](pelican-plan.md) for the full design rationale and detailed
-phase descriptions.
+See [pelican-plan.md](../../../design/pelican-plan.md) for the full design rationale
+and detailed phase descriptions.
 
 ## Design
 
@@ -159,4 +159,4 @@ CLI entry point: `pelican` with five commands:
 - SDF formulas: Quilez, iquilezles.org
 - Porter-Duff compositing: Porter & Duff (1984), SIGGRAPH
 
-See [pelican-plan.md](pelican-plan.md) for full citation details.
+See [pelican-plan.md](../../../design/pelican-plan.md) for full citation details.

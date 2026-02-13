@@ -158,7 +158,7 @@ def optimize_command() -> None:
             if frame_files:
                 gif_path = output_dir / "optimization.gif"
                 images = [iio.imread(str(f)) for f in frame_files]  # pyright: ignore[reportUnknownMemberType]
-                iio.imwrite(str(gif_path), images, duration=100, loop=0)  # pyright: ignore[reportUnknownMemberType]
+                iio.imwrite(str(gif_path), images, duration=250, loop=0)  # pyright: ignore[reportUnknownMemberType]
                 console.print(f"  -> Saved animation: {gif_path}")
         except Exception as e:
             console.print(f"  [yellow]Warning: Could not create GIF: {e}[/yellow]")

@@ -19,7 +19,7 @@ with major quality improvements in v2.
 
 ### Bug Fixes
 - **Triangle SDF winding**: Fixed to handle both CW and CCW winding orders
-- **Model versions**: Updated from `claude-3-opus-20240229` to `claude-sonnet-4-20250514`
+- **Model versions**: Updated to `claude-sonnet-4-5-20250929` (Sonnet 4.5)
 - **Removed empty legacy file**: `differentiable_pelican.py`
 
 ### New Features
