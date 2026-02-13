@@ -6,6 +6,9 @@ trash/
 attic/
 .kash/
 
+# Generated pipeline outputs (images committed to docs/results/ instead)
+out/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
