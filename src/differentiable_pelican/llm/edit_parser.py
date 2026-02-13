@@ -36,12 +36,24 @@ def parse_percentage(value_str: str | float, current: float) -> float:
         return float(value_str)
 
 
+def _apply_intensity_edit(edit: ShapeEdit, shape: Shape) -> None:
+    """Apply intensity edit to any shape type."""
+    if edit.changes and "intensity" in edit.changes:
+        current_intensity = float(shape.intensity.item())
+        new_intensity = parse_percentage(edit.changes["intensity"], current_intensity)
+        new_intensity = max(0.01, min(0.99, new_intensity))
+        shape.intensity_raw.data = torch.tensor(logit_param(new_intensity), device=shape.device)
+
+
 def apply_edit_to_shape(edit: ShapeEdit, shape: Shape) -> None:
     """
     Apply a modify edit to an existing shape (in-place).
     """
     if edit.type != "modify" or not edit.changes:
         return
+
+    # Apply intensity edit (works for all shape types)
+    _apply_intensity_edit(edit, shape)
 
     # Get current parameters
     if isinstance(shape, Circle):
@@ -74,6 +86,18 @@ def apply_edit_to_shape(edit: ShapeEdit, shape: Shape) -> None:
             new_rot = parse_percentage(edit.changes["rotation"], float(params.rotation.item()))
             shape.rotation_raw.data = torch.tensor([new_rot], device=shape.device)
 
+    elif isinstance(shape, Triangle):
+        # Handle vertex modifications: values can be [x, y] lists or individual coords
+        for vname, raw_param in [("v0", shape.v0_raw), ("v1", shape.v1_raw), ("v2", shape.v2_raw)]:
+            if vname in edit.changes:
+                val = edit.changes[vname]
+                if isinstance(val, (list, tuple)) and len(val) == 2:
+                    new_x = max(0.01, min(0.99, float(val[0])))
+                    new_y = max(0.01, min(0.99, float(val[1])))
+                    raw_param.data = torch.tensor(
+                        [logit_param(new_x), logit_param(new_y)], device=shape.device
+                    )
+
 
 def create_shape_from_edit(edit: ShapeEdit, device: torch.device) -> Shape | None:
     """
@@ -83,6 +107,7 @@ def create_shape_from_edit(edit: ShapeEdit, device: torch.device) -> Shape | Non
         return None
 
     params = edit.init_params
+    intensity = params.get("intensity", 0.0)
 
     if edit.primitive == "circle":
         return Circle(
@@ -90,6 +115,7 @@ def create_shape_from_edit(edit: ShapeEdit, device: torch.device) -> Shape | Non
             cy=params.get("cy", 0.5),
             radius=params.get("radius", 0.1),
             device=device,
+            intensity=intensity,
         )
     elif edit.primitive == "ellipse":
         return Ellipse(
@@ -99,12 +125,12 @@ def create_shape_from_edit(edit: ShapeEdit, device: torch.device) -> Shape | Non
             ry=params.get("ry", 0.1),
             rotation=params.get("rotation", 0.0),
             device=device,
+            intensity=intensity,
         )
     elif edit.primitive == "triangle":
         v0 = params.get("v0", [0.3, 0.3])
         v1 = params.get("v1", [0.7, 0.3])
         v2 = params.get("v2", [0.5, 0.7])
-        # Ensure v0, v1, v2 are lists/tuples, not floats
         if not isinstance(v0, (list, tuple)):
             v0 = [0.3, 0.3]
         if not isinstance(v1, (list, tuple)):
@@ -116,6 +142,7 @@ def create_shape_from_edit(edit: ShapeEdit, device: torch.device) -> Shape | Non
             v1=(float(v1[0]), float(v1[1])),
             v2=(float(v2[0]), float(v2[1])),
             device=device,
+            intensity=intensity,
         )
     else:
         return None

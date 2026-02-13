@@ -60,13 +60,28 @@ class TriangleParams:
 class Shape(nn.Module):
     """
     Base class for parameterized shapes.
+
+    Each shape has an optimizable intensity parameter (grayscale value)
+    that controls how dark the shape renders. This allows the optimizer
+    to match varying tones in the target image.
     """
 
     device: torch.device
+    intensity_raw: nn.Parameter
 
-    def __init__(self, device: torch.device):
+    def __init__(self, device: torch.device, intensity: float = 0.0):
         super().__init__()
         self.device = device
+        # Intensity in [0, 1] via sigmoid. 0.0 = black, 1.0 = white.
+        # Input is clamped to [0.01, 0.99] before logit transform.
+        self.intensity_raw = nn.Parameter(
+            torch.tensor(logit_param(max(0.01, min(0.99, intensity))), device=device)
+        )
+
+    @property
+    def intensity(self) -> torch.Tensor:
+        """Get the constrained intensity value in [0, 1]."""
+        return torch.sigmoid(self.intensity_raw)
 
     def get_params(self):
         """
@@ -96,8 +111,9 @@ class Circle(Shape):
         cy: float,
         radius: float,
         device: torch.device,
+        intensity: float = 0.0,
     ):
-        super().__init__(device)
+        super().__init__(device, intensity=intensity)
         # Store unconstrained parameters
         # Use logit for [0,1] values and inv_softplus for positive values
         self.cx_raw = nn.Parameter(torch.tensor(logit_param(cx), device=device))
@@ -106,9 +122,6 @@ class Circle(Shape):
 
     @override
     def get_params(self) -> CircleParams:
-        """
-        Derive constrained parameters from unconstrained.
-        """
         cx = torch.sigmoid(self.cx_raw)
         cy = torch.sigmoid(self.cy_raw)
         radius = torch.nn.functional.softplus(self.radius_raw)
@@ -116,9 +129,6 @@ class Circle(Shape):
 
     @override
     def sdf(self, points: torch.Tensor) -> torch.Tensor:
-        """
-        Compute signed distance field.
-        """
         from differentiable_pelican.sdf import sdf_circle
 
         params = self.get_params()
@@ -145,8 +155,9 @@ class Ellipse(Shape):
         ry: float,
         rotation: float,
         device: torch.device,
+        intensity: float = 0.0,
     ):
-        super().__init__(device)
+        super().__init__(device, intensity=intensity)
         self.cx_raw = nn.Parameter(torch.tensor(logit_param(cx), device=device))
         self.cy_raw = nn.Parameter(torch.tensor(logit_param(cy), device=device))
         self.rx_raw = nn.Parameter(torch.tensor([inv_softplus(rx)], device=device))
@@ -155,9 +166,6 @@ class Ellipse(Shape):
 
     @override
     def get_params(self) -> EllipseParams:
-        """
-        Derive constrained parameters.
-        """
         cx = torch.sigmoid(self.cx_raw)
         cy = torch.sigmoid(self.cy_raw)
         rx = torch.nn.functional.softplus(self.rx_raw)
@@ -167,9 +175,6 @@ class Ellipse(Shape):
 
     @override
     def sdf(self, points: torch.Tensor) -> torch.Tensor:
-        """
-        Compute signed distance field.
-        """
         from differentiable_pelican.sdf import sdf_ellipse
 
         params = self.get_params()
@@ -193,8 +198,9 @@ class Triangle(Shape):
         v1: tuple[float, float],
         v2: tuple[float, float],
         device: torch.device,
+        intensity: float = 0.0,
     ):
-        super().__init__(device)
+        super().__init__(device, intensity=intensity)
         # Each vertex coordinate is constrained to [0, 1] via sigmoid
         self.v0_raw = nn.Parameter(
             torch.tensor([logit_param(v0[0]), logit_param(v0[1])], device=device)
@@ -208,9 +214,6 @@ class Triangle(Shape):
 
     @override
     def get_params(self) -> TriangleParams:
-        """
-        Derive constrained parameters.
-        """
         v0 = torch.sigmoid(self.v0_raw)
         v1 = torch.sigmoid(self.v1_raw)
         v2 = torch.sigmoid(self.v2_raw)
@@ -219,78 +222,123 @@ class Triangle(Shape):
 
     @override
     def sdf(self, points: torch.Tensor) -> torch.Tensor:
-        """
-        Compute signed distance field.
-        """
         from differentiable_pelican.sdf import sdf_triangle
 
         params = self.get_params()
         return sdf_triangle(points, params.vertices)
 
 
-def create_initial_pelican(device: torch.device) -> list[Shape]:
+def create_initial_pelican(device: torch.device) -> tuple[list[Shape], list[str]]:
     """
-    Create hard-coded initial pelican geometry.
+    Create hard-coded initial pelican geometry matching the target image
+    (side view, facing right).
 
-    Structure:
-    - Body: large ellipse
-    - Head: circle above body
-    - Beak: triangle pointing right
-    - Eye: small circle on head
-    - Wing: ellipse on body (optional)
+    Returns:
+        shapes: List of Shape objects
+        names: Names for each shape (used by refinement loop)
     """
     shapes: list[Shape] = [
-        # Body: ellipse in lower center
+        # Body: large ellipse, light gray (pelican body is pale)
         Ellipse(
-            cx=0.5,
-            cy=0.6,
-            rx=0.15,
-            ry=0.25,
-            rotation=0.0,
-            device=device,
-        ),
-        # Head: circle above body
-        Circle(
-            cx=0.5,
-            cy=0.35,
-            radius=0.12,
-            device=device,
-        ),
-        # Beak: triangle pointing right
-        Triangle(
-            v0=(0.58, 0.32),
-            v1=(0.58, 0.38),
-            v2=(0.75, 0.35),
-            device=device,
-        ),
-        # Eye: small circle
-        Circle(
-            cx=0.52,
-            cy=0.33,
-            radius=0.02,
-            device=device,
-        ),
-        # Wing: ellipse on body
-        Ellipse(
-            cx=0.48,
-            cy=0.6,
-            rx=0.08,
-            ry=0.15,
+            cx=0.42,
+            cy=0.55,
+            rx=0.22,
+            ry=0.28,
             rotation=-0.3,
             device=device,
+            intensity=0.35,
+        ),
+        # Neck: tall narrow ellipse, light gray
+        Ellipse(
+            cx=0.52,
+            cy=0.35,
+            rx=0.06,
+            ry=0.15,
+            rotation=-0.2,
+            device=device,
+            intensity=0.40,
+        ),
+        # Head: circle at top right, light gray
+        Circle(
+            cx=0.58,
+            cy=0.18,
+            radius=0.08,
+            device=device,
+            intensity=0.35,
+        ),
+        # Beak upper: triangle pointing right, darker (olive/green in real pelican)
+        Triangle(
+            v0=(0.62, 0.15),
+            v1=(0.62, 0.22),
+            v2=(0.88, 0.20),
+            device=device,
+            intensity=0.25,
+        ),
+        # Beak lower / pouch: triangle below beak, darker
+        Triangle(
+            v0=(0.62, 0.22),
+            v1=(0.88, 0.20),
+            v2=(0.65, 0.28),
+            device=device,
+            intensity=0.30,
+        ),
+        # Wing: ellipse overlaying body, medium gray with texture
+        Ellipse(
+            cx=0.38,
+            cy=0.50,
+            rx=0.18,
+            ry=0.15,
+            rotation=-0.4,
+            device=device,
+            intensity=0.30,
+        ),
+        # Tail: small triangle at back, darker
+        Triangle(
+            v0=(0.18, 0.52),
+            v1=(0.25, 0.48),
+            v2=(0.12, 0.60),
+            device=device,
+            intensity=0.20,
+        ),
+        # Eye: tiny circle on head, very dark
+        Circle(
+            cx=0.60,
+            cy=0.16,
+            radius=0.015,
+            device=device,
+            intensity=0.05,
+        ),
+        # Feet: small ellipse at bottom, dark green
+        Ellipse(
+            cx=0.45,
+            cy=0.88,
+            rx=0.06,
+            ry=0.04,
+            rotation=0.0,
+            device=device,
+            intensity=0.15,
         ),
     ]
 
-    return shapes
+    names = [
+        "body",
+        "neck",
+        "head",
+        "beak_upper",
+        "beak_lower",
+        "wing",
+        "tail",
+        "eye",
+        "feet",
+    ]
+
+    return shapes, names
 
 
 ## Tests
 
 
 def test_circle_params_in_range():
-    """
-    Test that circle parameters are within valid ranges.
-    """
     device = torch.device("cpu")
     circle = Circle(cx=0.5, cy=0.5, radius=0.1, device=device)
     params = circle.get_params()
@@ -300,9 +348,6 @@ def test_circle_params_in_range():
 
 
 def test_ellipse_params_in_range():
-    """
-    Test that ellipse parameters are within valid ranges.
-    """
     device = torch.device("cpu")
     ellipse = Ellipse(cx=0.5, cy=0.5, rx=0.2, ry=0.1, rotation=0.5, device=device)
     params = ellipse.get_params()
@@ -313,9 +358,6 @@ def test_ellipse_params_in_range():
 
 
 def test_triangle_vertices_in_range():
-    """
-    Test that triangle vertices are within [0, 1].
-    """
     device = torch.device("cpu")
     triangle = Triangle(v0=(0.3, 0.3), v1=(0.7, 0.3), v2=(0.5, 0.7), device=device)
     params = triangle.get_params()
@@ -323,12 +365,11 @@ def test_triangle_vertices_in_range():
 
 
 def test_create_initial_pelican():
-    """
-    Test that initial pelican geometry can be created.
-    """
     device = torch.device("cpu")
-    shapes = create_initial_pelican(device)
-    assert len(shapes) == 5
-    assert isinstance(shapes[0], Ellipse)
-    assert isinstance(shapes[1], Circle)
-    assert isinstance(shapes[2], Triangle)
+    shapes, names = create_initial_pelican(device)
+    assert len(shapes) == 9
+    assert len(names) == 9
+    assert isinstance(shapes[0], Ellipse)  # body
+    assert "body" in names
+    assert "head" in names
+    assert "beak_upper" in names

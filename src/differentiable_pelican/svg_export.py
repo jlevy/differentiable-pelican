@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import math
+import re
 from collections.abc import Sequence
 from pathlib import Path
 
@@ -37,16 +39,25 @@ def shapes_to_svg(
     output_path.write_text(svg_content)
 
 
+def _intensity_to_fill(shape: Shape) -> str:
+    """Convert a shape's intensity parameter to an SVG fill color string."""
+    val = int(float(shape.intensity.item()) * 255)
+    val = max(0, min(255, val))
+    return f"rgb({val},{val},{val})"
+
+
 def _shape_to_svg_element(shape: Shape, width: int, height: int) -> str:
     """
     Convert a single shape to SVG element string.
     """
+    fill = _intensity_to_fill(shape)
+
     if isinstance(shape, Circle):
         params = shape.get_params()
         cx = float(params.cx.item()) * width
         cy = float(params.cy.item()) * height
         r = float(params.radius.item()) * width
-        return f'<circle cx="{cx:.2f}" cy="{cy:.2f}" r="{r:.2f}" fill="black"/>'
+        return f'<circle cx="{cx:.2f}" cy="{cy:.2f}" r="{r:.2f}" fill="{fill}"/>'
 
     elif isinstance(shape, Ellipse):
         params = shape.get_params()
@@ -54,11 +65,10 @@ def _shape_to_svg_element(shape: Shape, width: int, height: int) -> str:
         cy = float(params.cy.item()) * height
         rx = float(params.rx.item()) * width
         ry = float(params.ry.item()) * height
-        rotation_deg = float(params.rotation.item()) * 180.0 / 3.14159
+        rotation_deg = float(params.rotation.item()) * 180.0 / math.pi
 
-        # Apply rotation as transform around center
         transform = f"rotate({rotation_deg:.2f} {cx:.2f} {cy:.2f})"
-        return f'<ellipse cx="{cx:.2f}" cy="{cy:.2f}" rx="{rx:.2f}" ry="{ry:.2f}" fill="black" transform="{transform}"/>'
+        return f'<ellipse cx="{cx:.2f}" cy="{cy:.2f}" rx="{rx:.2f}" ry="{ry:.2f}" fill="{fill}" transform="{transform}"/>'
 
     elif isinstance(shape, Triangle):
         params = shape.get_params()
@@ -72,19 +82,95 @@ def _shape_to_svg_element(shape: Shape, width: int, height: int) -> str:
         x2, y2 = float(v2[0].item()) * width, float(v2[1].item()) * height
 
         points = f"{x0:.2f},{y0:.2f} {x1:.2f},{y1:.2f} {x2:.2f},{y2:.2f}"
-        return f'<polygon points="{points}" fill="black"/>'
+        return f'<polygon points="{points}" fill="{fill}"/>'
 
     else:
         raise ValueError(f"Unknown shape type: {type(shape)}")
+
+
+def composite_stages_svg(
+    stage_svg_paths: Sequence[tuple[Path, str, str]],
+    output_path: Path,
+) -> None:
+    """
+    Composite multiple stage SVGs into a single side-by-side SVG with labels.
+
+    Each stage is rendered as a nested <svg> element with its own viewBox,
+    so the output scales cleanly at any display size.
+
+    Args:
+        stage_svg_paths: List of (svg_path, label, sublabel) tuples.
+            label: short name shown below the image (e.g. "Round 8")
+            sublabel: detail line (e.g. "17 shapes")
+        output_path: Where to write the composite SVG.
+    """
+    n = len(stage_svg_paths)
+    if n == 0:
+        return
+
+    img_size = 128
+    gap = 4
+    margin = 4
+    label_gap = 3
+    label_h = 12
+    sublabel_h = 10
+
+    total_w = margin * 2 + n * img_size + (n - 1) * gap
+    total_h = margin + img_size + label_gap + label_h + 1 + sublabel_h + margin
+
+    lines = [f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {total_w} {total_h}">']
+    lines.append(f'  <rect width="{total_w}" height="{total_h}" fill="white"/>')
+
+    font = "system-ui, Helvetica, Arial, sans-serif"
+
+    for i, (svg_path, label, sublabel) in enumerate(stage_svg_paths):
+        x = margin + i * (img_size + gap)
+        y = margin
+
+        # Extract inner content (strip outer <svg> and </svg> tags, comments)
+        raw = svg_path.read_text()
+        inner = re.sub(r"<svg[^>]*>", "", raw, count=1)
+        inner = inner.rsplit("</svg>", 1)[0]
+        inner = re.sub(r"<!--.*?-->", "", inner)
+        inner = inner.strip()
+
+        # Border
+        lines.append(
+            f'  <rect x="{x - 0.5}" y="{y - 0.5}" width="{img_size + 1}" '
+            f'height="{img_size + 1}" rx="1" fill="none" stroke="#ddd" stroke-width="0.5"/>'
+        )
+
+        # Nested SVG
+        lines.append(
+            f'  <svg x="{x}" y="{y}" width="{img_size}" height="{img_size}" '
+            f'viewBox="0 0 128 128">'
+        )
+        lines.append(f"    {inner}")
+        lines.append("  </svg>")
+
+        # Labels
+        cx = x + img_size / 2
+        ly = margin + img_size + label_gap + label_h
+        lines.append(
+            f'  <text x="{cx}" y="{ly}" text-anchor="middle" '
+            f'font-family="{font}" font-size="9" font-weight="500" fill="#444">'
+            f"{label}</text>"
+        )
+        sy = ly + 1 + sublabel_h
+        lines.append(
+            f'  <text x="{cx}" y="{sy}" text-anchor="middle" '
+            f'font-family="{font}" font-size="7.5" fill="#888">'
+            f"{sublabel}</text>"
+        )
+
+    lines.append("</svg>")
+    output_path.write_text("\n".join(lines))
 
 
 ## Tests
 
 
 def test_export_svg_creates_file(tmp_path: Path):
-    """
-    Test that SVG export creates a file.
-    """
     import torch
 
     from differentiable_pelican.geometry import Circle
@@ -99,9 +185,6 @@ def test_export_svg_creates_file(tmp_path: Path):
 
 
 def test_export_svg_valid_xml(tmp_path: Path):
-    """
-    Test that exported SVG is valid XML.
-    """
     import xml.etree.ElementTree as ET
 
     import torch
@@ -123,9 +206,6 @@ def test_export_svg_valid_xml(tmp_path: Path):
 
 
 def test_export_svg_contains_shapes(tmp_path: Path):
-    """
-    Test that SVG contains expected shape elements.
-    """
     import torch
 
     from differentiable_pelican.geometry import Circle, Ellipse, Triangle
@@ -147,9 +227,6 @@ def test_export_svg_contains_shapes(tmp_path: Path):
 
 
 def test_svg_viewbox_correct(tmp_path: Path):
-    """
-    Test that SVG viewBox matches dimensions.
-    """
     import torch
 
     from differentiable_pelican.geometry import Circle

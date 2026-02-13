@@ -1,21 +1,15 @@
 from __future__ import annotations
 
 import base64
-import json
-import os
 import sys
 from pathlib import Path
 from textwrap import dedent
+from typing import Any
 
-import anthropic
-from dotenv import load_dotenv
 from pydantic import BaseModel
 from rich.console import Console
 
 console = Console()
-
-# Load environment variables
-load_dotenv(dotenv_path=Path(__file__).parent.parent.parent / ".env.local")
 
 
 class ImageValidation(BaseModel):
@@ -74,17 +68,13 @@ def validate_image(
     If target_path is provided, also computes similarity score.
     If fix_suggestions is True, provides more detailed debugging feedback.
     """
-    api_key = os.getenv("ANTHROPIC_API_KEY")
-    if not api_key:
-        raise ValueError("ANTHROPIC_API_KEY not found in environment")
-
-    client = anthropic.Anthropic(api_key=api_key)
+    from differentiable_pelican.llm.client import llm_call_json
 
     # Prepare images
     image_b64 = encode_image_to_base64(image_path)
     image_media_type = get_image_media_type(image_path)
 
-    content_blocks: list[dict[str, str | dict[str, str]]] = [
+    content_blocks: list[dict[str, Any]] = [
         {
             "type": "image",
             "source": {
@@ -149,30 +139,8 @@ def validate_image(
 
     content_blocks.append({"type": "text", "text": prompt_text})
 
-    # Call API
-    response = client.messages.create(
-        model="claude-3-opus-20240229",
-        max_tokens=1024,
-        messages=[{"role": "user", "content": content_blocks}],  # pyright: ignore[reportArgumentType]
-    )
-
-    # Parse response - extract text from first text content block
-    response_text = ""
-    for block in response.content:
-        if block.type == "text":
-            response_text = block.text  # type: ignore[attr-defined]
-            break
-
-    if not response_text:
-        raise ValueError(f"No text content in response: {response.content}")
-
-    try:
-        response_json = json.loads(response_text)
-        return ImageValidation(**response_json)
-    except (json.JSONDecodeError, ValueError) as e:
-        raise ValueError(
-            f"Failed to parse LLM response as JSON: {e}\nResponse: {response_text}"
-        ) from e
+    response_json = llm_call_json(content_blocks, max_tokens=1024)
+    return ImageValidation(**response_json)
 
 
 def validate_image_cli() -> None:

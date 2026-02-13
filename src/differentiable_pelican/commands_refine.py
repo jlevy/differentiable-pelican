@@ -81,9 +81,8 @@ def refine_command() -> None:
 
     # Create initial pelican
     console.print("\n[cyan]Creating initial pelican...[/cyan]")
-    shapes = create_initial_pelican(device)
-    shape_names = ["body", "head", "beak", "eye", "wing"]
-    console.print(f"  ✓ Created {len(shapes)} shapes")
+    shapes, shape_names = create_initial_pelican(device)
+    console.print(f"  -> Created {len(shapes)} shapes: {', '.join(shape_names)}")
 
     # Run refinement loop
     try:

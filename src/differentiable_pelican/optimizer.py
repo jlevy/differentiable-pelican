@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from pathlib import Path
 from typing import TypedDict
 
@@ -21,6 +22,10 @@ class OptimizationMetrics(TypedDict):
     resolution: int
 
 
+# Type for progress callback: (step, total_steps, loss_breakdown) -> None
+ProgressCallback = Callable[[int, int, dict[str, float]], None]
+
+
 def load_target_image(path: Path, resolution: int, device: torch.device) -> torch.Tensor:
     """
     Load and preprocess target image.
@@ -36,6 +41,8 @@ def anneal_tau(step: int, total_steps: int, tau_start: float, tau_end: float) ->
     """
     Exponentially anneal softness parameter.
     """
+    if total_steps == 0:
+        return tau_end
     progress = step / total_steps
     return tau_start * (tau_end / tau_start) ** progress
 
@@ -50,6 +57,7 @@ def optimize(
     tau_end: float | None = None,
     save_every: int | None = None,
     output_dir: Path | None = None,
+    progress_callback: ProgressCallback | None = None,
 ) -> OptimizationMetrics:
     """
     Optimize shapes to match target image using gradient descent.
@@ -64,12 +72,11 @@ def optimize(
         tau_end: Ending softness (default: 0.2 pixels)
         save_every: Save intermediate frames every N steps (None = don't save)
         output_dir: Directory to save frames (required if save_every is set)
+        progress_callback: Optional callback for progress updates
 
     Returns:
         Metrics dictionary with loss history and final parameters
     """
-    import numpy as np
-
     device = shapes[0].device
 
     # Default tau values in normalized coordinates
@@ -83,19 +90,19 @@ def optimize(
     for shape in shapes:
         params.extend(list(shape.parameters()))
 
-    # Create optimizer
+    # Create optimizer with weight decay for regularization
     optimizer = torch.optim.Adam(params, lr=lr)
 
-    # Learning rate scheduler
+    # Learning rate scheduler: warm up then cosine decay
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=steps, eta_min=lr / 20)
 
     # Precompute grid
     grid = make_grid(resolution, resolution, device)
 
     # Metrics tracking
-    loss_history = []
+    loss_history: list[dict[str, float]] = []
     best_loss = float("inf")
-    best_params = None
+    best_params: dict[int, dict[str, torch.Tensor]] | None = None
 
     # Setup output directory if saving frames
     frames_dir: Path | None = None
@@ -136,6 +143,10 @@ def optimize(
                 for i, shape in enumerate(shapes)
             }
 
+        # Progress callback
+        if progress_callback is not None:
+            progress_callback(step, steps, breakdown)
+
         # Save intermediate frames
         if (
             save_every
@@ -158,23 +169,20 @@ def optimize(
         for i, shape in enumerate(shapes):
             shape.load_state_dict(best_params[i])
 
-    metrics = {
+    metrics: OptimizationMetrics = {
         "loss_history": loss_history,
         "final_loss": best_loss,
         "steps_completed": step + 1,
         "resolution": resolution,
     }
 
-    return metrics  # pyright: ignore[reportReturnType]
+    return metrics
 
 
 ## Tests
 
 
 def test_anneal_tau():
-    """
-    Test that tau anneals correctly.
-    """
     tau_0 = anneal_tau(0, 100, 1.0, 0.2)
     tau_mid = anneal_tau(50, 100, 1.0, 0.2)
     tau_end = anneal_tau(100, 100, 1.0, 0.2)
@@ -184,11 +192,12 @@ def test_anneal_tau():
     assert 0.2 < tau_mid < 1.0
 
 
-def test_optimize_reduces_loss_simple_case():
-    """
-    Test that optimization reduces loss for a simple case.
-    """
+def test_anneal_tau_zero_steps():
+    tau = anneal_tau(0, 0, 1.0, 0.2)
+    assert abs(tau - 0.2) < 1e-6
 
+
+def test_optimize_reduces_loss_simple_case():
     from differentiable_pelican.geometry import Circle
 
     device = torch.device("cpu")
@@ -210,3 +219,33 @@ def test_optimize_reduces_loss_simple_case():
     final_loss = metrics["final_loss"]
 
     assert final_loss < initial_loss
+
+
+def test_optimize_with_progress_callback():
+    from differentiable_pelican.geometry import Circle
+
+    device = torch.device("cpu")
+    resolution = 32
+
+    target_circle = Circle(cx=0.5, cy=0.5, radius=0.2, device=device)
+    tau = 1.0 / resolution
+    target = render([target_circle], resolution, resolution, tau, device).detach()
+
+    init_circle = Circle(cx=0.45, cy=0.45, radius=0.18, device=device)
+
+    callback_calls: list[int] = []
+
+    def on_progress(step: int, _total: int, _breakdown: dict[str, float]) -> None:
+        callback_calls.append(step)
+
+    optimize(
+        [init_circle],
+        target,
+        resolution,
+        steps=10,
+        lr=0.05,
+        progress_callback=on_progress,
+    )
+
+    assert len(callback_calls) == 10
+    assert callback_calls == list(range(10))
