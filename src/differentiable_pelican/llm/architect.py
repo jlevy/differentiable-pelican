@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from textwrap import dedent
+from typing import Any
 
 from pydantic import BaseModel
 
@@ -11,13 +12,16 @@ from differentiable_pelican.llm.judge import JudgeFeedback
 class ShapeEdit(BaseModel):
     """
     Single edit action for a shape.
+
+    LLM returns mixed types in changes/init_params: floats, strings ("+20%"),
+    or [x, y] lists for triangle vertices, so we use Any for flexibility.
     """
 
     type: str  # "modify", "add", "remove"
     shape: str  # Shape name/identifier
-    changes: dict[str, str | float] | None = None  # For modify
+    changes: dict[str, Any] | None = None  # For modify
     primitive: str | None = None  # For add: "circle", "ellipse", "triangle"
-    init_params: dict[str, float] | None = None  # For add
+    init_params: dict[str, Any] | None = None  # For add
 
 
 class ArchitectResponse(BaseModel):

@@ -86,6 +86,18 @@ def apply_edit_to_shape(edit: ShapeEdit, shape: Shape) -> None:
             new_rot = parse_percentage(edit.changes["rotation"], float(params.rotation.item()))
             shape.rotation_raw.data = torch.tensor([new_rot], device=shape.device)
 
+    elif isinstance(shape, Triangle):
+        # Handle vertex modifications: values can be [x, y] lists or individual coords
+        for vname, raw_param in [("v0", shape.v0_raw), ("v1", shape.v1_raw), ("v2", shape.v2_raw)]:
+            if vname in edit.changes:
+                val = edit.changes[vname]
+                if isinstance(val, (list, tuple)) and len(val) == 2:
+                    new_x = max(0.01, min(0.99, float(val[0])))
+                    new_y = max(0.01, min(0.99, float(val[1])))
+                    raw_param.data = torch.tensor(
+                        [logit_param(new_x), logit_param(new_y)], device=shape.device
+                    )
+
 
 def create_shape_from_edit(edit: ShapeEdit, device: torch.device) -> Shape | None:
     """

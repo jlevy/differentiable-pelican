@@ -242,13 +242,22 @@ def refinement_loop(
             if consecutive_failures >= max_consecutive_failures:
                 break
 
-    # Restore best shapes if we have them
+    # Restore best shapes if we have them and shape counts match
     if best_shapes_state is not None and best_names is not None:
-        try:
-            _restore_shapes_state(shapes, best_shapes_state)
-            names = best_names
-        except Exception as e:
-            print(f"Warning: Could not restore best shapes: {e}")
+        if len(shapes) == len(best_shapes_state):
+            try:
+                _restore_shapes_state(shapes, best_shapes_state)
+                names = best_names
+            except Exception as e:
+                print(f"Warning: Could not restore best shapes: {e}")
+        else:
+            # Shape count changed (edits added/removed shapes). The current shapes
+            # may not match the best state's topology, so we keep current shapes
+            # but log the discrepancy.
+            print(
+                f"Note: Shape count changed ({len(best_shapes_state)} -> {len(shapes)}), "
+                f"using current shapes for final output."
+            )
 
     # Save final outputs
     final_dir = output_dir / "final"
