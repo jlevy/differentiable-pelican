@@ -58,38 +58,28 @@ on quality degradation.
 ## Results
 
 Starting from 9 hand-coded shapes and a
-[vintage pelican engraving](images/pelican-drawing-1.jpg) as target:
+[vintage pelican engraving](images/pelican-drawing-1.jpg) as target,
+the pipeline optimizes via gradient descent (500 steps of Adam), then
+greedily adds shapes one at a time. Each candidate is frozen-then-settled
+(100 steps), then jointly re-optimized with all shapes (200 steps), and
+kept only if loss drops. All 26 greedy candidates were accepted.
 
-### Baseline optimization (9 shapes, 500 steps of Adam)
-
-<p>
-<img src="docs/results/00_target.jpg" width="200" alt="Target pelican engraving"/>
-&nbsp;&nbsp;
-<img src="docs/results/02_optimized.png" width="200" alt="Optimized with 9 shapes"/>
-</p>
-
-![Optimization animation](docs/results/02_optimization.gif)
-
-### Greedy refinement (up to 35 shapes)
-
-Each round: freeze existing shapes, optimize only the newcomer (100
-steps), then unfreeze and re-optimize all shapes jointly (200 steps).
-Keep only if loss drops. 26 of 26 candidates accepted.
+<img src="docs/results/pipeline_stages.svg" width="660" alt="Pipeline stages: initial, optimized, greedy refined"/>
 
 | Stage | Loss | Shapes | vs Baseline |
 |-------|------|--------|-------------|
-| Baseline (500 steps) | 0.0351 | 9 | -- |
-| Greedy (20 shapes) | 0.0259 | 20 | -26% |
-| Greedy (35 shapes) | 0.0238 | 35 | -32% |
+| Initial geometry | -- | 9 | -- |
+| Optimized (500 steps) | 0.0351 | 9 | -- |
+| Greedy refined (35 shapes) | 0.0238 | 35 | -32% |
 
-<p>
-<img src="docs/results/04_greedy_final.png" width="200" alt="20 shapes"/>
-&nbsp;&nbsp;
-<img src="docs/results/05_greedy_extended_final.png" width="200" alt="35 shapes"/>
-</p>
+Individual SVGs:
+[initial](docs/results/01_test_render.svg) |
+[optimized](docs/results/02_optimized.svg) |
+[greedy 20](docs/results/04_greedy_final.svg) |
+[greedy 35](docs/results/05_greedy_extended_final.svg)
 
 Per-round metrics in the [research log](docs/research-log.md).
-Full image progression in [detailed results](docs/results/README.md).
+Full progression in [detailed results](docs/results/README.md).
 
 ## Pipeline
 
