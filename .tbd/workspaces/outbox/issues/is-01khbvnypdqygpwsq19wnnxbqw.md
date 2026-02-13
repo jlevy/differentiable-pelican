@@ -10,6 +10,6 @@ priority: 3
 status: closed
 title: Fix stale comment in geometry.py:75-77 about logit(0.0)->-inf - misleading since the code clamps to [0.01, 0.99]
 type: is
-updated_at: 2026-02-13T16:08:35.442Z
-version: 2
+updated_at: 2026-02-13T16:35:19.312Z
+version: 3
 ---

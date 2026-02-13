@@ -10,6 +10,6 @@ priority: 2
 status: closed
 title: "Fix 4 basedpyright warnings: unused parameters in commands_optimize.py:116, optimizer.py:252 and unused variable in test_end_to_end.py:25"
 type: is
-updated_at: 2026-02-13T16:08:36.780Z
-version: 2
+updated_at: 2026-02-13T16:35:19.285Z
+version: 3
 ---

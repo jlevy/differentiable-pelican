@@ -10,6 +10,6 @@ priority: 3
 status: closed
 title: Fix validator.py:76 generic dict without type args - use dict[str, Any] instead of bare dict
 type: is
-updated_at: 2026-02-13T16:08:36.335Z
-version: 2
+updated_at: 2026-02-13T16:35:19.327Z
+version: 3
 ---
