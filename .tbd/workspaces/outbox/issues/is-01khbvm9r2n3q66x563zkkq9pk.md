@@ -10,6 +10,6 @@ priority: 2
 status: closed
 title: "Fix magic numbers: extract named constants for SSIM (C1, C2, sigma), loss weights, tau defaults, and other hardcoded values throughout the codebase per general-coding-rules"
 type: is
-updated_at: 2026-02-13T16:35:19.235Z
-version: 3
+updated_at: 2026-02-13T17:53:00.243Z
+version: 4
 ---

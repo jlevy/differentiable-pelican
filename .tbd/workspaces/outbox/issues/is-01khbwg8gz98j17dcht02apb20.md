@@ -10,7 +10,7 @@ priority: 1
 status: closed
 title: Audit and fix all README.md links and references
 type: is
-updated_at: 2026-02-13T16:15:55.594Z
-version: 2
+updated_at: 2026-02-13T17:53:00.425Z
+version: 3
 ---
 Audit all links in README.md. Verify docs references point to correct paths, CLI commands table is accurate, and project structure descriptions match reality.

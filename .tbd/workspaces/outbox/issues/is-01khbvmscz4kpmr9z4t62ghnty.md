@@ -10,6 +10,6 @@ priority: 2
 status: closed
 title: Fix fragile .env.local path construction in llm/client.py:18 using Path(__file__).parent x4 - use a proper project root detection approach
 type: is
-updated_at: 2026-02-13T16:35:19.268Z
-version: 3
+updated_at: 2026-02-13T17:53:00.270Z
+version: 4
 ---

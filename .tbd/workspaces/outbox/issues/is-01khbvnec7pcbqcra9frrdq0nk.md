@@ -10,6 +10,6 @@ priority: 3
 status: closed
 title: "Remove redundant/obvious docstrings per python-rules: several get_params() and sdf() methods just repeat what's evident from names"
 type: is
-updated_at: 2026-02-13T16:35:19.294Z
-version: 3
+updated_at: 2026-02-13T17:53:00.291Z
+version: 4
 ---

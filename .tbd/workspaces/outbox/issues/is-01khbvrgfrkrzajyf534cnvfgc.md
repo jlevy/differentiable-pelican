@@ -10,6 +10,6 @@ priority: 2
 status: closed
 title: "Review pelican-plan.md Phase 1 section: verify SDF references (Iquilez), add citations for soft coverage and tau annealing, correct any technical inaccuracies"
 type: is
-updated_at: 2026-02-13T16:35:19.368Z
-version: 3
+updated_at: 2026-02-13T17:53:00.357Z
+version: 4
 ---

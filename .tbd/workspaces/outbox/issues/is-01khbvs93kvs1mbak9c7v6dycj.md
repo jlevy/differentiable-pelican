@@ -10,6 +10,6 @@ priority: 2
 status: closed
 title: "Review pelican-plan.md Future Directions: add ideas from v2 work (Bezier curves, multi-res optimization, RGB color, batch targets)"
 type: is
-updated_at: 2026-02-13T16:35:19.401Z
-version: 3
+updated_at: 2026-02-13T17:53:00.384Z
+version: 4
 ---

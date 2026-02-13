@@ -10,6 +10,6 @@ priority: 2
 status: closed
 title: "Review pelican-plan.md Success Metrics: compare planned targets vs actual v2 results, update with real performance numbers"
 type: is
-updated_at: 2026-02-13T16:35:19.393Z
-version: 3
+updated_at: 2026-02-13T17:53:00.377Z
+version: 4
 ---
