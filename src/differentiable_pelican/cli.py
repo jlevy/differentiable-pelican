@@ -4,22 +4,33 @@ import sys
 
 from rich.console import Console
 
+_COMMANDS = {
+    "validate-image": "Validate a rendered image using LLM",
+    "test-render": "Render initial hard-coded geometry",
+    "optimize": "Optimize geometry to match target",
+    "judge": "Evaluate optimized SVG",
+    "refine": "Full refinement loop with LLM",
+}
+
 console = Console()
+err_console = Console(stderr=True)
+
+
+def _print_usage() -> None:
+    console.print("Usage: pelican <command> [options]\n")
+    console.print("Available commands:")
+    for name, desc in _COMMANDS.items():
+        console.print(f"  {name:<18s} {desc}")
+    console.print("\nRun 'pelican <command> --help' for command-specific options.")
 
 
 def app() -> None:
     """
     Main CLI entry point.
     """
-    if len(sys.argv) < 2:
-        console.print("[red]Error: No command specified[/red]")
-        console.print("\nAvailable commands:")
-        console.print("  validate-image  - Validate a rendered image using LLM")
-        console.print("  test-render     - Render initial hard-coded geometry")
-        console.print("  optimize        - Optimize geometry to match target")
-        console.print("  judge           - Evaluate optimized SVG")
-        console.print("  refine          - Full refinement loop with LLM")
-        sys.exit(1)
+    if len(sys.argv) < 2 or sys.argv[1] in ("--help", "-h"):
+        _print_usage()
+        sys.exit(0 if len(sys.argv) >= 2 else 1)
 
     command = sys.argv[1]
 
@@ -44,5 +55,6 @@ def app() -> None:
 
         refine_command()
     else:
-        console.print(f"[red]Error: Unknown command '{command}'[/red]")
+        err_console.print(f"[red]Error: Unknown command '{command}'[/red]")
+        _print_usage()
         sys.exit(1)

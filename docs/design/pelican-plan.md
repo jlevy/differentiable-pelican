@@ -65,10 +65,10 @@ Phase 1: Gradient-Based Optimization
 │  SVG Export (ellipse, circle, poly)  │
 └──────────────────────────────────────┘
 
-Phase 2: LLM Refinement Loop
+Phase 2: LLM Refinement Loop (with rollback)
 ┌──────────────┐     ┌──────────────┐     ┌──────────────┐
 │  Optimized   │────▶│   Judge      │────▶│     LLM      │
-│  SVG + PNG   │     │ (Multimodal) │     │  Architect   │
+│  SVG + PNG   │     │  (Claude)    │     │  Architect   │
 └──────────────┘     └──────────────┘     └──────────────┘
        ▲                     │                ▲    │
        │                     │                │    │
@@ -79,9 +79,12 @@ Phase 2: LLM Refinement Loop
        │              └──────────────┘             │
        │                                           │
        └───────────────────────────────────────────┘
-              Apply geometric edits,
-              add/remove shapes, re-optimize
+              Apply geometric edits (modify/add/remove),
+              re-optimize, rollback on quality degradation
 ```
+
+*v2 additions*: Per-shape grayscale intensity, SSIM + edge loss, automatic
+rollback with consecutive failure limits, shared LLM client with retry logic.
 
 * * *
 
@@ -114,20 +117,25 @@ target pelican drawing.
 
   - Optional: wing ellipse, legs as lines/capsules
 
+  *v2 implementation*: 9 shapes with named roles (body, neck, head, beak_upper,
+  beak_lower, wing, tail, eye, feet), each with an optimizable grayscale intensity.
+
 **1.2 Differentiable Rendering**
 
-- Implement soft SDF (signed distance field) functions for each primitive
+- Implement soft SDF (signed distance field) functions for each primitive,
+  following Quilez's formulations (see [References](#references--inspiration))
 
 - Render to 128×128 grayscale image using PyTorch operations
 
 - Use sigmoid-based soft coverage: `coverage = sigmoid(-sdf / tau)`
 
-- Composition uses alpha-over with per-shape alpha = coverage:
+- Composition uses alpha-over (Porter-Duff "over" operator) with per-shape
+  coverage and intensity:
   ```
   out = 1.0  # white background
   for shape in back_to_front(shapes):
       cov = sigmoid(-sdf(shape, grid) / tau)  # in [0, 1]
-      out = (1 - cov) * out + cov * 0.0  # black ink over white
+      out = (1 - cov) * out + cov * shape.intensity  # intensity-weighted compositing
   ```
 
 - τ (softness) is in “pixel units”: start at τ0 ≈ 1.0 px (≈ 1.0 / max(H, W)) and anneal
@@ -188,8 +196,12 @@ target pelican drawing.
 
   - On-canvas penalty: penalize centers/vertices with margin outside [0, 1].
 
-- Optionally include SSIM (window=7) to encourage structural similarity; keep its weight
-  small relative to MSE.
+- SSIM loss (Wang et al., 2004, window=7) to encourage structural similarity; keep its
+  weight small relative to MSE. Uses Gaussian window and stabilization constants
+  C1 = 0.01², C2 = 0.03².
+
+- Edge-aware loss using Sobel gradient magnitude to encourage matching sharp
+  boundaries and contours.
 
 **1.4 Optimization Loop**
 
@@ -258,7 +270,7 @@ two segments”).
 
 **2.1 Judge Component**
 
-- Multimodal LLM (GPT-4V, Claude 3.5 Sonnet, or Gemini) evaluates:
+- Multimodal LLM (Claude Sonnet 4) evaluates:
 
   - Current SVG code
 
@@ -332,7 +344,10 @@ two segments”).
 
 - Track improvement metrics across rounds
 
-- Stop when judge indicates “no major improvements needed”
+- Stop when judge indicates "no major improvements needed"
+
+- Automatic rollback: if post-edit optimization degrades quality, revert to
+  pre-round state and continue. Stop after N consecutive failures.
 
 ### Success Criteria
 
@@ -378,11 +393,11 @@ two segments”).
 
 **LLM Integration** (Phase 2):
 
-- `anthropic` or `openai`: API clients
+- `anthropic`: API client (Anthropic Claude, primary provider)
 
-- `instructor` (optional): structured output parsing
+- `pydantic`: validate LLM-generated edits and structured responses
 
-- `pydantic`: validate LLM-generated edits
+- `python-dotenv`: manage API keys via .env.local
 
 **Dependencies Management**:
 
@@ -397,42 +412,51 @@ differentiable-pelican/
 ├── pyproject.toml          # uv config, dependencies
 ├── Makefile               # common commands (lint, test, run)
 ├── README.md              # overview, quickstart
-├── docs/design/pelican-plan.md  # this document
+├── docs/
+│   ├── design/
+│   │   ├── pelican-plan.md         # this document
+│   │   └── implementation-progress.md  # implementation status
+│   ├── development.md              # developer workflows
+│   ├── installation.md             # uv/Python install guide
+│   └── publishing.md               # PyPI publishing guide
 │
 ├── src/
 │   └── differentiable_pelican/
-│       ├── __init__.py
-│       ├── cli.py         # main CLI entry point
-│       ├── geometry.py    # shape parameterizations
-│       ├── sdf.py         # differentiable SDF functions
-│       ├── renderer.py    # soft rasterization
-│       ├── loss.py        # loss functions
-│       ├── optimizer.py   # training loop
-│       ├── svg_export.py  # convert params → SVG
-│       ├── validator.py   # Phase 0: image validation via LLM
-│       ├── llm/           # Phase 2 (builds on validator)
-│       │   ├── __init__.py
-│       │   ├── judge.py        # extends validator with SVG awareness
-│       │   ├── architect.py
-│       │   └── edit_parser.py
-│       └── utils.py       # logging, metrics, viz
+│       ├── __init__.py              # package exports
+│       ├── cli.py                   # main CLI entry point (dispatcher)
+│       ├── commands.py              # test-render command
+│       ├── commands_optimize.py     # optimize command
+│       ├── commands_judge.py        # judge command
+│       ├── commands_refine.py       # refine command
+│       ├── geometry.py              # shape parameterizations (9-shape pelican)
+│       ├── sdf.py                   # differentiable SDF functions
+│       ├── renderer.py              # soft rasterization with intensity
+│       ├── loss.py                  # MSE + SSIM + edge + priors
+│       ├── optimizer.py             # training loop with callbacks
+│       ├── svg_export.py            # convert params → SVG with grayscale fills
+│       ├── refine.py                # refinement loop with rollback
+│       ├── validator.py             # image validation via LLM
+│       ├── utils.py                 # device detection, seeding
+│       └── llm/                     # LLM integration (Phase 2)
+│           ├── __init__.py          # package exports
+│           ├── client.py            # shared API client with retry
+│           ├── judge.py             # SVG-aware evaluation
+│           ├── architect.py         # structural edit generation
+│           └── edit_parser.py       # edit application (modify/add/remove)
 │
 ├── tests/
-│   ├── test_validator.py
-│   ├── test_phase0_integration.py
-│   ├── test_sdf.py
-│   ├── test_renderer.py
-│   └── test_svg_export.py
+│   ├── test_validator.py            # e2e validation tests
+│   └── test_end_to_end.py           # full pipeline tests
+│
+├── devtools/
+│   └── lint.py                      # lint orchestration (ruff, basedpyright, codespell)
 │
 ├── images/
-│   ├── pelican-drawing-1.jpg  # reference image (vintage engraving)
-│   └── LICENSE                # Source: publicdomainpictures.net
+│   ├── pelican-drawing-1.jpg        # reference image (vintage engraving)
+│   └── LICENSE                      # Source: publicdomainpictures.net
 │
-├── examples/
-│   └── prompts/              # LLM prompt templates
-│
-└── out/                   # generated outputs (gitignored)
-    ├── frames/            # intermediate PNGs
+└── out/                             # generated outputs (gitignored)
+    ├── frames/
     ├── pelican_final.svg
     ├── pelican_final.png
     ├── optimization.gif
@@ -512,12 +536,8 @@ uv run pelican test-render
 # Renders initial hard-coded geometry, no optimization
 ```
 
-**Export only**:
-```bash
-uv run pelican export \
-  --params out/run_001/final_params.json \
-  --output pelican.svg
-```
+*Note: The `export` command was planned but not implemented; SVG export is
+integrated into the optimize and refine commands.*
 
 ### Phase 2 Commands
 
@@ -528,7 +548,7 @@ uv run pelican refine \
   --rounds 5 \
   --phase1-steps 500 \
   --llm-provider anthropic \
-  --llm-model claude-3-5-sonnet-20241022 \
+  --llm-model claude-sonnet-4-20250514 \
   --output-dir out/refined_001
 ```
 
@@ -608,14 +628,14 @@ self-validation without human intervention.
 **Goal**: Create a simple CLI tool that uses multimodal LLM to evaluate rendered images,
 enabling automated validation during development.
 
-**Compute Requirements**: API access only (anthropic/openai), no local compute needed.
+**Compute Requirements**: API access only (Anthropic), no local compute needed.
 
 **Implementation**:
 
 - [ ] Simple CLI: `pelican validate-image --image path/to/render.png
   [--target path/to/target.jpg]`
 
-- [ ] Multimodal LLM prompt (Claude 3.5 Sonnet or GPT-4V):
+- [ ] Multimodal LLM prompt (Claude Sonnet 4):
 
   - Describe what shapes/objects are visible in the image
 
@@ -1035,7 +1055,7 @@ The judge extends validation with SVG-aware structural feedback.
 
 - [ ] Handle API errors gracefully (rate limits, network issues, timeouts)
 
-- [ ] Add `--llm-provider` flag (anthropic/openai/gemini)
+- [ ] ~~Add `--llm-provider` flag~~ *v2: Uses Anthropic exclusively via shared client*
 
 - [ ] Add `--dry-run` mode (show prompt without calling API)
 
@@ -1348,9 +1368,9 @@ def test_llm_suggests_100_shapes():
 
 **Considered alternatives**:
 
-- `diffvg`: Differentiable vector graphics library
+- `diffvg` (Li et al., 2020): Differentiable vector graphics rasterizer
 
-- `LIVE`: Learned vectorization
+- `LIVE` (Ma et al., 2022): Layer-wise image vectorization
 
 - Direct SVG manipulation libraries
 
@@ -1442,10 +1462,12 @@ discrete structure.
 ### Phase 1 (Quantitative)
 
 - Image MSE between optimized and target: < 0.05
+  - *v2 actual*: 0.050 at 100 steps (128x128), down from 0.063 in v1
 
 - Perceptual similarity (SSIM): > 0.85
 
 - Optimization time on CPU: < 5 minutes
+  - *v2 actual*: ~25 seconds for 100 steps at 128x128 on CPU
 
 - Optimization time on GPU: < 1 minute
 
@@ -1466,8 +1488,15 @@ discrete structure.
 - Generated SVG is valid (passes SVG validator)
 
 - SVG is minimal (<10 shapes for simple pelican, <20 for detailed)
+  - *v2 actual*: 9 shapes for the initial pelican geometry
 
 - Output is recognizable as pelican by humans: >95%
+
+### v2 Test Coverage
+
+- 37 unit tests passing (up from 29 in v1)
+- 6 integration/e2e tests (marked slow, require API keys)
+- 0 linter warnings, 0 type checker errors
 
 * * *
 
@@ -1476,47 +1505,100 @@ discrete structure.
 ### Open Questions
 
 1. **Initial structure sensitivity**: How much does hard-coded starting point matter?
+   *v2 finding*: Significant impact. 9-shape anatomical layout (v2) converges much
+   better than 5-shape generic layout (v1).
 
 2. **Target image requirements**: Does it work with photos or only cartoons?
+   *v2 status*: Tested with vintage engraving. High-contrast line art works best.
 
 3. **Shape budget**: Fixed number of primitives vs dynamic (LLM adds/removes)?
+   *v2 status*: LLM can add/remove shapes. Starting with 9 is a good baseline.
 
 4. **Optimization stability**: How often does it diverge or produce degenerate shapes?
+   *v2 status*: NaN guards, gradient clipping, and degeneracy penalties prevent most
+   instabilities. Rollback handles remaining cases.
 
 5. **LLM edit safety**: How to prevent LLM from suggesting invalid/broken edits?
+   *v2 status*: Edit parser validates all edits. Rollback reverts on quality
+   degradation. Shared client handles API errors with retry logic.
 
 ### Future Extensions
 
-1. **Bezier curves**: Add support for smooth curves (beak, pouch, wing)
+**Near-term** (building on v2):
 
-2. **Color**: Extend to RGB rendering, optimize fill colors
+1. **Bezier curves**: Add support for smooth curves (beak contours, pouch outlines)
 
-3. **Multiple targets**: Optimize for multiple reference images simultaneously
+2. **Full RGB color**: Extend from grayscale intensity to per-shape RGB fill colors
 
-4. **Animation**: Optimize keyframes, generate animated SVG
+3. **Multi-resolution optimization**: Start coarse (64x64), refine at higher res (256x256)
 
-5. **Other animals**: Generalize to arbitrary subjects (not just pelicans)
+4. **Batch optimization**: Optimize for multiple reference images simultaneously
 
-6. **Interactive editing**: Human-in-the-loop GUI for adjusting shapes
+**Medium-term**:
 
-7. **Stylization**: Add style transfer loss (match artistic style, not just geometry)
+5. **CLIP-guided loss**: Semantic matching via CLIP embeddings as auxiliary loss
+
+6. **Interactive web viewer**: Real-time parameter tuning in browser
+
+7. **Differentiable stroke**: Render line art and stroke-based shapes
+
+8. **Population-based training**: Evolve diverse populations of pelican shapes
+
+**Long-term**:
+
+9. **Generalize beyond pelicans**: Arbitrary SVG generation from any target
+
+10. **Neural SDF representation**: Learned distance fields instead of analytical ones
+
+11. **Text-to-SVG pipeline**: Use LLM for initial layout from text description
+
+12. **Animation**: Optimize keyframes, generate animated SVG sequences
 
 * * *
 
 ## References & Inspiration
 
-- **Differentiable rendering**: Neural style transfer, DiffVG, LIVE
+### Differentiable Vector Graphics
 
-- **SDF rendering**: Inigo Quilez’s articles on signed distance functions
+- **DiffVG**: Li, T.-M., Lukac, M., Gharbi, M., and Ragan-Kelley, J. (2020).
+  "Differentiable Vector Graphics Rasterization for Editing and Learning."
+  *ACM Transactions on Graphics (SIGGRAPH Asia)*, 39(6).
+  [Project page](https://people.csail.mit.edu/tzumao/diffvg/) |
+  [Code](https://github.com/BachiLi/diffvg)
 
-- **LLM code generation**: AlphaCode, GPT-4 for competitive programming
+- **LIVE**: Ma, X. et al. (2022). "Towards Layer-wise Image Vectorization."
+  *Proceedings of IEEE/CVF CVPR*, pp. 16314-16323.
+  [Project page](https://ma-xu.github.io/LIVE/) |
+  [Code](https://github.com/Picsart-AI-Research/LIVE-Layerwise-Image-Vectorization)
 
-- **Hybrid optimization**: Combining gradient descent with symbolic search
+### Signed Distance Functions
 
-- **Triangle SDFs**: Inigo Quilez, “Distance functions” and “Triangles” SDF notes for
-  robust triangle SDFs
+- **Quilez, I.** "2D distance functions." *iquilezles.org*.
+  [https://iquilezles.org/articles/distfunctions2d/](https://iquilezles.org/articles/distfunctions2d/)
+  -- Exact SDF formulas for 2D primitives including triangle, circle, ellipse.
 
-- **Compositing**: SIGGRAPH notes on alpha compositing; Porter-Duff “over” operator
+### Image Quality & Loss Functions
+
+- **SSIM**: Wang, Z., Bovik, A. C., Sheikh, H. R., and Simoncelli, E. P. (2004).
+  "Image Quality Assessment: From Error Visibility to Structural Similarity."
+  *IEEE Transactions on Image Processing*, 13(4), pp. 600-612.
+  [DOI: 10.1109/TIP.2003.819861](https://doi.org/10.1109/TIP.2003.819861)
+
+### Compositing
+
+- **Porter-Duff**: Porter, T. and Duff, T. (1984). "Compositing Digital Images."
+  *Computer Graphics (SIGGRAPH 84)*, 18(3), pp. 253-259.
+  [DOI: 10.1145/800031.808606](https://doi.org/10.1145/800031.808606)
+  -- Defines the "over" operator used for layer compositing.
+
+- **Painter's algorithm**: Newell, M. E., Newell, R. G., and Sancha, T. L. (1972).
+  "A Solution to the Hidden Surface Problem." *ACM Annual Conference*, Vol. 1, pp.
+  443-450.
+
+### Hybrid Optimization
+
+- Combining gradient descent for continuous parameters with LLM-guided discrete
+  structural search (add/remove/modify shapes)
 
 * * *
 

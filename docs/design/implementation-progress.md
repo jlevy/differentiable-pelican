@@ -157,4 +157,29 @@ tests/
 - Neural SDF representation (learned distance fields)
 - Text-to-SVG pipeline using LLM for initial layout
 
-Last Updated: 2026-02-13 (v2 Revision - Phases 0-2D Complete)
+## v2.1 Code Review Changes (2026-02)
+
+### Template Upgrade
+- **Copier update**: simple-modern-uv v0.2.19 → v0.2.21
+- **Python 3.14**: Added to CI matrix
+- **Updated CI actions**: checkout@v6, setup-uv@v7, uv 0.9.25
+- **Updated dev deps**: ruff 0.14.11, basedpyright 1.37.1, pytest 9.0.2
+- **Removed .cursor/rules**: Migrated to tbd guidelines
+
+### Code Fixes
+- **SSIM constants**: Extracted to named module-level constants (_SSIM_C1, _SSIM_C2, _SSIM_SIGMA)
+- **math.pi**: Replaced magic number 3.14159 in svg_export.py
+- **Fragile .env path**: Fixed with project-root-walking discovery
+- **Silent except**: Replaced bare except in refine.py with logged warning
+- **Dead code**: Removed unimplemented 'export' command from CLI
+- **Type annotations**: dict[str, Any] in validator, return type on render_to_numpy
+- **Unused parameters**: Prefixed with underscore for basedpyright compliance
+- **CI fix**: Skip slow/e2e tests that require API keys
+
+### Documentation
+- **Moved docs**: pelican-plan.md, implementation-progress.md → docs/design/
+- **Updated plan**: Model versions, project structure, references with proper citations
+- **Root docs to docs/**: development.md, installation.md, publishing.md
+- **README links**: All updated to match new paths
+
+Last Updated: 2026-02-13 (v2.1 Code Review - All phases complete)
