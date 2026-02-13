@@ -397,7 +397,7 @@ differentiable-pelican/
 ├── pyproject.toml          # uv config, dependencies
 ├── Makefile               # common commands (lint, test, run)
 ├── README.md              # overview, quickstart
-├── pelican-plan.md        # this document
+├── docs/design/pelican-plan.md  # this document
 │
 ├── src/
 │   └── differentiable_pelican/

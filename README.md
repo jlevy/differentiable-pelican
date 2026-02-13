@@ -52,7 +52,7 @@ Target Image  -->  Differentiable Renderer  -->  Loss Function
      └────────────  Refinement Loop  <-- Edit Parser
 ```
 
-See [pelican-plan.md](docs/pelican-plan.md) for the full design document.
+See [pelican-plan.md](docs/design/pelican-plan.md) for the full design document.
 
 ## CLI Commands
 
