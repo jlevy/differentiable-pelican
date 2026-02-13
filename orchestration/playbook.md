@@ -8,7 +8,7 @@ before proceeding.
 
 - Python 3.11+ with uv installed
 - Dependencies synced: `uv sync`
-- For refinement: `ANTHROPIC_API_KEY` set in `.env.local`
+- For LLM refinement (Step 3b only): `ANTHROPIC_API_KEY` set in `.env.local`
 
 ## Step 1: Test Render
 
@@ -45,7 +45,7 @@ uv run pelican optimize \
 **Expected output:**
 - `out/optimize/pelican_optimized.png` -- Optimized render
 - `out/optimize/pelican_optimized.svg` -- SVG export
-- `out/optimize/optimization.gif` -- Animation of the optimization process
+- `out/optimize/optimization.gif` -- Animation (400ms/frame, includes final best-param frame)
 - `out/optimize/metrics.json` -- Loss history and final metrics
 - `out/optimize/frames/` -- Individual frame PNGs
 
@@ -53,14 +53,60 @@ uv run pelican optimize \
 - Final loss should be approximately 0.035 or lower
 - The optimized PNG should resemble the target pelican more closely than the
   test render
-- The GIF should show gradual convergence
+- The GIF should show gradual convergence with the final frame matching the PNG
 
 **If it fails:** Check that `images/pelican-drawing-1.jpg` exists. If loss
 diverges (NaN), try reducing `--lr 0.01`.
 
-## Step 3: Refine (requires API key)
+## Step 3: Greedy Refinement (recommended)
 
-Run the full LLM refinement loop: optimize, judge, architect edits, re-optimize.
+Add shapes one at a time. Each candidate goes through a two-phase trial:
+1. **Settle**: Freeze existing shapes, optimize only the new shape (finds best placement)
+2. **Re-optimize**: Unfreeze all, optimize together (adjusts for the newcomer)
+
+Keep the shape if loss improves after both phases; discard otherwise.
+
+```bash
+uv run pelican greedy-refine \
+  --target images/pelican-drawing-1.jpg \
+  --resolution 128 \
+  --max-shapes 20 \
+  --initial-steps 500 \
+  --settle-steps 100 \
+  --reoptimize-steps 200 \
+  --max-failures 5 \
+  --output-dir out/greedy_refine
+```
+
+**Expected output:**
+- `out/greedy_refine/round_00_initial/` -- Initial 9-shape optimization
+- `out/greedy_refine/round_NN_accept_TYPE/` -- Per-accepted-shape outputs
+  - `optimized.png`, `optimized.svg`
+- `out/greedy_refine/final/` -- Best shapes from all rounds
+  - `pelican_final.png`, `pelican_final.svg`
+- `out/greedy_refine/greedy_history.json` -- Full round-by-round decisions
+
+**Check:**
+- Loss should decrease incrementally with each accepted shape
+- Rejected shapes should show loss_after >= loss_before in history
+- Final PNG should look like a clean, detailed pelican
+- Final shape count should be 9 + (number of accepted shapes)
+
+**Key parameters to tune:**
+- `--settle-steps 100`: More steps = new shape finds better placement (slower)
+- `--reoptimize-steps 200`: More steps = better global optimization (slower)
+- `--max-shapes 20`: Shape budget; fewer = cleaner, more = more detail
+- `--scale 1.0`: Size of new shapes (0.5 = small details, 2.0 = large shapes)
+- `--no-freeze`: Let all shapes move during settle (more freedom, less stable)
+
+**If it fails:** No API key needed (no LLM). If loss doesn't improve at all,
+try `--scale 0.5` for smaller shapes or `--settle-steps 200` for more
+optimization time per candidate.
+
+## Step 3b: LLM Refinement (alternative, requires API key)
+
+Uses an LLM judge and architect to propose structural edits. More creative
+but less predictable than greedy refinement.
 
 ```bash
 uv run pelican refine \
@@ -73,23 +119,12 @@ uv run pelican refine \
 
 **Expected output:**
 - `out/refine/round_00/` through `out/refine/round_04/` -- Per-round outputs
-  - `optimized.png`, `optimized.svg` -- Round render
-  - `feedback.json` -- Judge evaluation
-  - `architect.json` -- Proposed edits
-- `out/refine/final/` -- Best shapes from all rounds
-  - `pelican_final.png`, `pelican_final.svg`
-- `out/refine/refinement_history.json` -- Full round-by-round metrics
-
-**Check:**
-- Final loss should be approximately 0.032 or lower (better than optimize-only)
-- The final PNG should look like a well-formed pelican
-- The refinement history should show loss generally decreasing across rounds
-- Shape count may increase as the architect adds anatomical details
+- `out/refine/final/pelican_final.png`, `pelican_final.svg`
+- `out/refine/refinement_history.json`
 
 **If it fails:**
 - Missing API key: Set `ANTHROPIC_API_KEY` in `.env.local`
 - Rate limits: The client retries automatically with exponential backoff
-- If all rounds roll back, the architect prompt may need tuning
 
 ## Step 4: Collect Results
 
@@ -108,10 +143,10 @@ cp out/optimize/pelican_optimized.png docs/results/02_optimized.png
 cp out/optimize/pelican_optimized.svg docs/results/02_optimized.svg
 cp out/optimize/optimization.gif docs/results/02_optimization.gif
 
-# Refinement
-cp out/refine/round_00/optimized.png docs/results/03_refine_round0.png
-cp out/refine/final/pelican_final.png docs/results/04_refine_final.png
-cp out/refine/final/pelican_final.svg docs/results/04_refine_final.svg
+# Greedy refinement (recommended)
+cp out/greedy_refine/round_00_initial/optimized.png docs/results/03_greedy_initial.png
+cp out/greedy_refine/final/pelican_final.png docs/results/04_greedy_final.png
+cp out/greedy_refine/final/pelican_final.svg docs/results/04_greedy_final.svg
 ```
 
 **Check:** All files exist in `docs/results/` and match the latest run.
@@ -119,11 +154,12 @@ cp out/refine/final/pelican_final.svg docs/results/04_refine_final.svg
 ## Step 5: Update Results Documentation
 
 Update `docs/results/README.md` with the latest metrics from
-`out/refine/refinement_history.json` and `out/optimize/metrics.json`.
+`out/greedy_refine/greedy_history.json` and `out/optimize/metrics.json`.
 
 Key values to update:
 - Optimize final loss (from `metrics.json`)
-- Per-round loss and shape count (from `refinement_history.json`)
+- Per-round accept/reject decisions (from `greedy_history.json`)
+- Shapes added vs rejected
 - Any changes to observations
 
 ## Step 6: Run Tests
@@ -154,8 +190,9 @@ For a fast end-to-end run (lower resolution, fewer steps):
 uv run pelican test-render --resolution 64 --output-dir out/quick_test
 uv run pelican optimize --target images/pelican-drawing-1.jpg \
   --steps 100 --resolution 64 --output-dir out/quick_opt
-uv run pelican refine --target images/pelican-drawing-1.jpg \
-  --rounds 3 --steps-per-round 100 --resolution 64 --output-dir out/quick_refine
+uv run pelican greedy-refine --target images/pelican-drawing-1.jpg \
+  --resolution 64 --max-shapes 15 --initial-steps 200 \
+  --settle-steps 50 --reoptimize-steps 100 --output-dir out/quick_greedy
 ```
 
 ## Troubleshooting
@@ -163,8 +200,9 @@ uv run pelican refine --target images/pelican-drawing-1.jpg \
 | Problem | Solution |
 |---------|----------|
 | `ModuleNotFoundError` | Run `uv sync` |
-| `ANTHROPIC_API_KEY not found` | Create `.env.local` with your key |
+| `ANTHROPIC_API_KEY not found` | Only needed for `refine`, not `greedy-refine` |
 | Loss goes to NaN | Reduce learning rate: `--lr 0.01` |
 | GIF not created | Install imageio: `uv add imageio` |
-| Refine final looks bad | Bug was fixed: best shapes now deep-copied |
+| No shapes accepted | Try `--scale 0.5` or `--settle-steps 200` |
+| Too many shapes | Reduce `--max-shapes` or increase `--max-failures` |
 | Rate limit errors | Client retries automatically (2s, 4s, 8s backoff) |

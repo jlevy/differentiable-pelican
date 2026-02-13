@@ -28,42 +28,57 @@ Optimization animation:
 
 ![Optimization GIF](02_optimization.gif)
 
-### 3. Refinement Loop (LLM Judge + Architect)
+### 3. Greedy Refinement (shape-dropping)
 
-Multi-round refinement with Claude Sonnet 4.5 judge and architect:
+Greedy forward selection: add one shape at a time, let gradient descent
+find optimal placement, keep only if loss improves.
 
-**Round 1** (post-optimization, before LLM edits):
+Two-phase trial per candidate:
+1. **Settle** (100 steps): Freeze existing shapes, optimize only new shape
+2. **Re-optimize** (200 steps): Unfreeze all, optimize together
 
-![Round 0](03_refine_round0.png)
+**After initial optimization** (9 shapes, same as Step 2):
 
-**Final** (best from 5 rounds, restored via deep copy):
+![Greedy Initial](03_greedy_initial.png)
 
-![Final](04_refine_final.png)
+**Final** (20 shapes, 11 added, 0 rejected):
+
+![Greedy Final](04_greedy_final.png)
 
 ## Metrics Summary
 
 | Stage | Loss | Shapes | Notes |
 |-------|------|--------|-------|
 | Test render | N/A | 9 | Initial hard-coded geometry |
-| Optimize (500 steps) | 0.0351 | 9 | Best single-run result |
-| Refine round 1 | 0.0382 | 9 | First optimization in refinement |
-| Refine round 2 | 0.0342 | 14 | LLM added 5 shapes, loss improved |
-| Refine round 3 | 0.0326 | 18 | Further additions, continued improvement |
-| Refine round 4 | 0.0320 | 19 | Best loss achieved |
-| Refine round 5 | 0.0337 | 19 | Slight regression |
-| Refine final | 0.0320 | 19 | Best shapes restored via deep copy |
+| Optimize (500 steps) | 0.0351 | 9 | Baseline single-run result |
+| Greedy round 1 | 0.0350 | 10 | +circle, accepted |
+| Greedy round 2 | 0.0349 | 11 | +ellipse, accepted |
+| Greedy round 3 | 0.0340 | 12 | +triangle, accepted |
+| Greedy round 4 | 0.0331 | 13 | +circle, accepted |
+| Greedy round 5 | 0.0305 | 14 | +ellipse, accepted (big improvement) |
+| Greedy round 6 | 0.0290 | 15 | +triangle, accepted |
+| Greedy round 7 | 0.0290 | 16 | +circle, accepted |
+| Greedy round 8 | 0.0286 | 17 | +ellipse, accepted |
+| Greedy round 9 | 0.0284 | 18 | +triangle, accepted |
+| Greedy round 10 | 0.0284 | 19 | +circle, accepted |
+| Greedy round 11 | 0.0259 | 20 | +ellipse, accepted (big improvement) |
+| **Greedy final** | **0.0259** | **20** | **26% better than optimize-only** |
 
 ## Observations
 
 1. **Optimization works well**: 500 steps of gradient descent produces a
-   recognizable pelican silhouette from the initial geometry.
+   recognizable pelican silhouette from the initial 9-shape geometry.
 
-2. **Refinement loop improving**: The architect adds meaningful shapes
-   (throat_pouch, wing_feathers, webbed_foot) and loss steadily decreases
-   across rounds. Best-state deep copy ensures the final output always uses
-   the highest-quality shapes regardless of topology changes.
+2. **Greedy refinement is highly effective**: Every candidate shape was
+   accepted (11/11). Loss dropped 26% from 0.0351 to 0.0259. The two-phase
+   approach (settle then re-optimize) lets each shape find its best placement
+   before the whole scene adjusts.
 
-3. **Key areas for improvement**:
-   - Architect prompt needs more context about current shape layout
-   - Edit validation should reject duplicate shape names
-   - Consider warm-starting optimization with existing params after edits
+3. **No LLM needed for placement**: Gradient descent handles WHERE to put
+   each shape. The greedy loop just decides WHAT to add (cycling through
+   circle, ellipse, triangle). No API key required.
+
+4. **Key areas for further improvement**:
+   - Shape replacement: swap out the least-helpful shape for a different type
+   - Error-guided placement: initialize new shapes near highest-error regions
+   - LLM-guided shape selection: let an LLM suggest what to try next
