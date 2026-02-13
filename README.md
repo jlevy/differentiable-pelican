@@ -1,81 +1,66 @@
 # Differentiable Pelican
 
-**What if you could teach a computer to draw a pelican by telling it
-"you're wrong" 10,000 times, and letting calculus do the rest?**
+Gradient-based optimization of SVG primitives through a differentiable
+renderer, with optional LLM-guided structural refinement.
 
 ![Greedy refinement, shape by shape](docs/results/05_greedy_extended.gif)
 
-We approximate a target pelican image using circles, ellipses, and
-triangles whose parameters are optimized via gradient descent
-through a differentiable renderer. No neural network. No pixel
-buffer. Just shapes, a loss function, and backpropagation.
+The renderer is implemented entirely in
+[PyTorch](https://pytorch.org/) as soft
+[signed distance fields](https://iquilezles.org/articles/distfunctions2d/)
+(circles, ellipses, triangles) composited via
+[Porter-Duff](https://dl.acm.org/doi/10.1145/800031.808606) alpha-over.
+Because every operation is a differentiable tensor op, we can
+backpropagate a pixel-level loss through the full rendering pipeline
+to the shape parameters -- position, size, rotation, intensity -- and
+optimize them with standard gradient descent.
 
-## Why This Is Interesting
+This is an example of
+[differentiable programming](https://en.wikipedia.org/wiki/Differentiable_programming):
+treating an entire program (here, an SVG renderer) as a differentiable
+function and optimizing its inputs via gradients. The same idea
+underlies neural network training, but here the "model" is a handful
+of interpretable geometric primitives rather than millions of opaque
+weights. The output is valid SVG at every step.
 
-Most rendering pipelines are black boxes to an optimizer: you put
-parameters in, you get pixels out, but you can't ask "how should I
-nudge this ellipse to make the output look more like the target?"
+## Key ideas
 
-Differentiable rendering changes that. By implementing the renderer
-in a framework that tracks gradients (here, PyTorch), every pixel
-in the output carries information about how it depends on each
-shape's position, size, rotation, and intensity. We can compute
-the gradient of a loss function (measuring how far the rendered
-image is from the target) with respect to every shape parameter at
-once, then follow those gradients to improve the image iteratively.
+**Continuous relaxation.** SVG shapes are inherently discrete, but
+[soft SDFs](https://iquilezles.org/articles/distfunctions2d/) with a
+sigmoid (`coverage = sigmoid(-sdf / tau)`) make coverage a smooth
+function of shape parameters. This is the same trick behind soft
+attention ([Vaswani et al., 2017](https://arxiv.org/abs/1706.03762))
+and differentiable sorting
+([Blondel et al., 2020](https://arxiv.org/abs/2002.08871)) --
+replacing hard decisions with smooth approximations so gradients can
+flow.
 
-This is the same principle behind training neural networks --
-define a loss, backpropagate, update parameters -- but applied to
-an interpretable, symbolic representation rather than millions of
-opaque weights. The shapes remain editable SVG primitives
-throughout.
+**Composite loss.** The loss combines pixel MSE,
+[SSIM](https://doi.org/10.1109/TIP.2003.819861) (structural
+similarity), Sobel edge matching, and geometric priors (overlap,
+boundary, and degeneracy penalties).
 
-A few techniques here appear throughout differentiable programming:
+**Greedy topology search.** Gradient descent optimizes continuous
+parameters but can't decide whether to add a shape. A greedy
+forward-selection loop proposes candidates one at a time, lets
+gradient descent find optimal placement, and keeps each shape only if
+it reduces loss. This discrete/continuous interplay parallels
+[neural architecture search](https://arxiv.org/abs/1802.03268) and
+mixture-of-experts routing.
 
-- **Continuous relaxation of discrete structure.** An SVG circle is
-  either there or it isn't, but we use
-  [soft signed distance fields](https://iquilezles.org/articles/distfunctions2d/)
-  with a sigmoid to make coverage a smooth function of shape
-  parameters. Replacing hard decisions with soft approximations is
-  a workhorse technique in differentiable programming, from
-  [attention mechanisms](https://arxiv.org/abs/1706.03762) to
-  [differentiable sorting](https://arxiv.org/abs/2002.08871).
-
-- **Compositing as a differentiable program.** Shapes are layered
-  with [Porter-Duff](https://dl.acm.org/doi/10.1145/800031.808606)
-  alpha compositing, each shape's soft coverage acting as an alpha
-  mask. The full pipeline -- raw parameters through SDF evaluation,
-  sigmoid, and layer composition -- is one differentiable
-  computation graph, so gradients flow from pixel-level loss back
-  to every shape parameter in a single backward pass.
-
-- **Composite loss design.** The loss combines pixel MSE,
-  [structural similarity (SSIM)](https://doi.org/10.1109/TIP.2003.819861),
-  Sobel edge matching, and geometric priors (overlap, boundary, and
-  degeneracy penalties). Balancing pixel fidelity against structural
-  and regularization objectives is a design challenge common to
-  differentiable systems from image reconstruction to physics
-  simulation.
-
-- **Greedy search over discrete topology.** Gradient descent
-  optimizes continuous parameters but can't decide _whether_ to add
-  a shape. We use greedy forward selection: propose a candidate, let
-  gradient descent find its optimal placement, keep it only if loss
-  improves. This interplay between discrete search (what to add) and
-  continuous optimization (where to put it) parallels patterns in
-  neural architecture search, program synthesis, and
-  mixture-of-experts routing.
+**LLM structural refinement (optional).** A multimodal LLM
+([Claude](https://www.anthropic.com/claude), via the
+[Anthropic API](https://docs.anthropic.com/en/api/getting-started))
+acts as judge and architect: it evaluates the current render, proposes
+structural edits (add/remove/modify shapes), and the system rolls back
+on quality degradation.
 
 ## Results
 
 Starting from 9 hand-coded shapes and a
-[vintage pelican engraving](images/pelican-drawing-1.jpg) as the
-target, the pipeline first optimizes via gradient descent, then
-greedily adds shapes one at a time. Each candidate is placed by
-gradient descent alone -- no heuristics, no LLM, no human in the
-loop.
+[vintage pelican engraving](images/pelican-drawing-1.jpg) as target:
 
-### Target and baseline optimization (9 shapes, 500 steps)
+### Baseline optimization (9 shapes, 500 steps of Adam)
 
 <p>
 <img src="docs/results/00_target.jpg" width="200" alt="Target pelican engraving"/>
@@ -87,46 +72,26 @@ loop.
 
 ### Greedy refinement (up to 35 shapes)
 
-Each round: freeze existing shapes, optimize only the newcomer for
-100 steps (settle phase), then unfreeze and re-optimize all shapes
-together for 200 steps (joint phase). Keep only if loss drops.
-All 26 candidates accepted, 0 rejected.
+Each round: freeze existing shapes, optimize only the newcomer (100
+steps), then unfreeze and re-optimize all shapes jointly (200 steps).
+Keep only if loss drops. 26 of 26 candidates accepted.
 
 | Stage | Loss | Shapes | vs Baseline |
 |-------|------|--------|-------------|
-| Optimize (500 steps) | 0.0351 | 9 | -- |
+| Baseline (500 steps) | 0.0351 | 9 | -- |
 | Greedy (20 shapes) | 0.0259 | 20 | -26% |
 | Greedy (35 shapes) | 0.0238 | 35 | -32% |
 
 <p>
-<img src="docs/results/04_greedy_final.png" width="200" alt="20 shapes final"/>
+<img src="docs/results/04_greedy_final.png" width="200" alt="20 shapes"/>
 &nbsp;&nbsp;
-<img src="docs/results/05_greedy_extended_final.png" width="200" alt="35 shapes final"/>
+<img src="docs/results/05_greedy_extended_final.png" width="200" alt="35 shapes"/>
 </p>
 
-Per-round metrics and observations are in the
-[research log](docs/research-log.md). The full image progression
-is in [detailed results](docs/results/README.md).
+Per-round metrics in the [research log](docs/research-log.md).
+Full image progression in [detailed results](docs/results/README.md).
 
-## Quick Start
-
-```bash
-uv sync
-
-# Render the initial hard-coded pelican (no optimization)
-pelican test-render --resolution 128
-
-# Optimize against the target image
-pelican optimize --target images/pelican-drawing-1.jpg --steps 500
-
-# Greedy refinement (no API key needed)
-pelican greedy-refine --max-shapes 35
-
-# LLM refinement loop (requires ANTHROPIC_API_KEY)
-pelican refine --target images/pelican-drawing-1.jpg --rounds 5
-```
-
-## How It Works
+## Pipeline
 
 ```
 Target Image  -->  Differentiable Renderer  -->  Loss Function
@@ -142,34 +107,44 @@ Target Image  -->  Differentiable Renderer  -->  Loss Function
      └────────────  Refinement Loop
 ```
 
-- **Render** -- evaluate soft SDFs on a pixel grid, composite
-  back-to-front via Porter-Duff alpha-over (all PyTorch tensor ops).
-- **Optimize** -- Adam minimizes MSE + SSIM + edge + priors against
-  the target. Tau (softness) anneals from blurry (strong gradients)
-  to crisp (sharp edges).
-- **Greedily add shapes** -- propose one candidate at a time, let
-  gradient descent place it, keep only if loss improves.
-- **LLM refinement (optional)** -- a multimodal judge evaluates the
-  result, an architect proposes structural edits, the system rolls
-  back on quality degradation.
+## Quick start
 
-## CLI Commands
+```bash
+uv sync
+
+pelican test-render --resolution 128
+pelican optimize --target images/pelican-drawing-1.jpg --steps 500
+pelican greedy-refine --max-shapes 35
+pelican refine --target images/pelican-drawing-1.jpg --rounds 5  # requires ANTHROPIC_API_KEY
+```
+
+## CLI commands
 
 | Command | Description |
 |---------|-------------|
-| `pelican test-render` | Render initial geometry without optimization |
-| `pelican optimize` | Optimize shapes to match target image |
+| `pelican test-render` | Render initial geometry (no optimization) |
+| `pelican optimize` | Gradient-optimize shapes to match target image |
 | `pelican greedy-refine` | Greedy forward-selection refinement loop |
-| `pelican judge` | Evaluate optimized SVG with LLM |
-| `pelican refine` | Full refinement loop with LLM feedback |
-| `pelican validate-image` | Validate a rendered image with LLM |
+| `pelican judge` | Evaluate current SVG with LLM |
+| `pelican refine` | Multi-round LLM refinement loop |
+| `pelican validate-image` | LLM-based image validation |
+
+## Stack
+
+| Library | Role |
+|---------|------|
+| [PyTorch](https://pytorch.org/) `>=2.1` | Differentiable rendering, autograd, optimization |
+| [Pillow](https://pillow.readthedocs.io/) `>=10.0` | Image I/O |
+| [imageio](https://imageio.readthedocs.io/) `>=2.31` | GIF generation |
+| [Rich](https://rich.readthedocs.io/) `>=13.0` | Terminal UI, progress bars |
+| [Anthropic SDK](https://docs.anthropic.com/en/api/client-sdks) `>=0.18` | LLM integration (optional) |
+| [Pydantic](https://docs.pydantic.dev/) `>=2.0` | Structured LLM response validation |
 
 ## Docs
 
 - [Pelican Plan](docs/design/pelican-plan.md) -- full design document
-  (rendering approach, loss functions, LLM integration, rationale)
-- [Research log](docs/research-log.md) -- experiment history with
-  per-round metrics
+  (rendering approach, loss functions, LLM architecture, rationale)
+- [Research log](docs/research-log.md) -- experiment history
 - [Installation](docs/installation.md) -- uv and Python setup
 - [Development](docs/development.md) -- dev workflows
 - [Publishing](docs/publishing.md) -- PyPI publishing
