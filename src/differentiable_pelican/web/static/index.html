@@ -1,0 +1,928 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pelican SVG Optimizer</title>
+<style>
+  :root {
+    --bg: #fafafa;
+    --surface: #ffffff;
+    --border: #e5e5e5;
+    --text: #171717;
+    --text-secondary: #737373;
+    --accent: #2563eb;
+    --accent-hover: #1d4ed8;
+    --success: #16a34a;
+    --danger: #dc2626;
+    --radius: 6px;
+    --font: system-ui, -apple-system, sans-serif;
+    --mono: ui-monospace, 'Cascadia Code', 'Fira Code', monospace;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.5;
+    min-height: 100vh;
+  }
+
+  header {
+    border-bottom: 1px solid var(--border);
+    padding: 16px 24px;
+    background: var(--surface);
+  }
+
+  header h1 {
+    font-size: 18px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+  }
+
+  header span {
+    color: var(--text-secondary);
+    font-size: 13px;
+    margin-left: 12px;
+  }
+
+  .layout {
+    display: grid;
+    grid-template-columns: 1fr 360px;
+    gap: 0;
+    max-width: 1200px;
+    margin: 0 auto;
+    min-height: calc(100vh - 57px);
+  }
+
+  @media (max-width: 800px) {
+    .layout { grid-template-columns: 1fr; }
+  }
+
+  .main-panel {
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .side-panel {
+    border-left: 1px solid var(--border);
+    background: var(--surface);
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    overflow-y: auto;
+  }
+
+  .svg-container {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    max-height: 520px;
+  }
+
+  .svg-container svg {
+    width: 100%;
+    height: 100%;
+  }
+
+  .svg-placeholder {
+    color: var(--text-secondary);
+    font-size: 14px;
+    text-align: center;
+    padding: 40px;
+  }
+
+  .metrics-bar {
+    display: flex;
+    gap: 16px;
+    font-size: 13px;
+    font-family: var(--mono);
+    color: var(--text-secondary);
+    flex-wrap: wrap;
+  }
+
+  .metrics-bar .metric {
+    display: flex;
+    gap: 4px;
+  }
+
+  .metrics-bar .label { color: var(--text-secondary); }
+  .metrics-bar .value { color: var(--text); font-weight: 500; }
+
+  .progress-bar-container {
+    height: 6px;
+    background: var(--border);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+
+  .progress-bar {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 3px;
+    width: 0%;
+    transition: width 0.3s ease;
+  }
+
+  .timeline-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .timeline-container input[type="range"] {
+    flex: 1;
+    accent-color: var(--accent);
+  }
+
+  .timeline-container .step-label {
+    font-size: 12px;
+    font-family: var(--mono);
+    color: var(--text-secondary);
+    min-width: 40px;
+  }
+
+  .action-buttons {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .action-buttons button {
+    font-size: 12px;
+    padding: 4px 10px;
+  }
+
+  /* Side panel sections */
+  .section-title {
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+  }
+
+  /* Drop zone */
+  .drop-zone {
+    border: 2px dashed var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s;
+    position: relative;
+  }
+
+  .drop-zone:hover, .drop-zone.drag-over {
+    border-color: var(--accent);
+    background: rgba(37, 99, 235, 0.04);
+  }
+
+  .drop-zone input[type="file"] {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+  }
+
+  .drop-zone .label {
+    font-size: 14px;
+    color: var(--text-secondary);
+  }
+
+  .drop-zone .sublabel {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-top: 4px;
+  }
+
+  .target-preview {
+    max-width: 100%;
+    max-height: 140px;
+    border-radius: var(--radius);
+    display: none;
+    margin-top: 8px;
+  }
+
+  /* Parameters */
+  .param-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .param-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .param-row label {
+    font-size: 13px;
+    color: var(--text);
+    flex-shrink: 0;
+  }
+
+  .param-row input[type="range"] {
+    flex: 1;
+    max-width: 120px;
+    accent-color: var(--accent);
+  }
+
+  .param-row input[type="number"] {
+    width: 70px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 3px 6px;
+    font-size: 13px;
+    font-family: var(--mono);
+    text-align: right;
+  }
+
+  .param-row select {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 3px 6px;
+    font-size: 13px;
+    background: var(--surface);
+  }
+
+  .param-row .range-value {
+    font-size: 12px;
+    font-family: var(--mono);
+    color: var(--text-secondary);
+    min-width: 36px;
+    text-align: right;
+  }
+
+  .advanced-toggle {
+    font-size: 12px;
+    color: var(--accent);
+    cursor: pointer;
+    border: none;
+    background: none;
+    padding: 0;
+    text-decoration: underline;
+  }
+
+  .advanced-params { display: none; }
+  .advanced-params.show { display: flex; flex-direction: column; gap: 10px; }
+
+  .greedy-params { display: none; }
+  .greedy-params.show { display: flex; flex-direction: column; gap: 10px; }
+
+  /* Buttons */
+  button {
+    font-family: var(--font);
+    font-size: 14px;
+    font-weight: 500;
+    padding: 8px 16px;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  button:hover { background: var(--bg); }
+  button:active { transform: scale(0.98); }
+  button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .btn-primary {
+    background: var(--accent);
+    color: white;
+    border-color: var(--accent);
+  }
+
+  .btn-primary:hover { background: var(--accent-hover); }
+
+  .btn-danger {
+    color: var(--danger);
+    border-color: var(--danger);
+  }
+
+  .btn-danger:hover { background: rgba(220, 38, 38, 0.06); }
+
+  .run-controls {
+    display: flex;
+    gap: 8px;
+  }
+
+  .run-controls button { flex: 1; }
+
+  /* Status line */
+  .status-line {
+    font-size: 13px;
+    color: var(--text-secondary);
+    min-height: 20px;
+  }
+
+  .status-line.running { color: var(--accent); }
+  .status-line.error { color: var(--danger); }
+  .status-line.complete { color: var(--success); }
+
+  /* Notifications */
+  .notification {
+    font-size: 12px;
+    padding: 6px 10px;
+    border-radius: var(--radius);
+    background: rgba(37, 99, 235, 0.08);
+    color: var(--accent);
+    display: none;
+  }
+
+  .notification.show { display: block; }
+
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 12px 24px;
+    background: var(--surface);
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Pelican SVG Optimizer<span>Differentiable rendering</span></h1>
+</header>
+
+<div class="layout">
+  <div class="main-panel">
+    <div class="svg-container" id="svgContainer">
+      <div class="svg-placeholder" id="svgPlaceholder">
+        Upload an image and click Run to start optimization
+      </div>
+    </div>
+
+    <div class="progress-bar-container">
+      <div class="progress-bar" id="progressBar"></div>
+    </div>
+
+    <div class="metrics-bar" id="metricsBar">
+      <div class="metric"><span class="label">Step</span> <span class="value" id="metricStep">--</span></div>
+      <div class="metric"><span class="label">Loss</span> <span class="value" id="metricLoss">--</span></div>
+      <div class="metric"><span class="label">Shapes</span> <span class="value" id="metricShapes">--</span></div>
+    </div>
+
+    <div class="timeline-container" id="timelineContainer" style="display:none">
+      <button id="replayBtn" title="Play/Pause replay">&#9654;</button>
+      <input type="range" id="timelineScrubber" min="0" max="0" value="0">
+      <span class="step-label" id="timelineLabel">0</span>
+    </div>
+
+    <div class="action-buttons" id="actionButtons" style="display:none">
+      <button id="copySvgBtn">Copy SVG</button>
+      <button id="downloadSvgBtn">Download SVG</button>
+      <button id="downloadAllBtn">Download All</button>
+    </div>
+
+    <div class="notification" id="notification"></div>
+    <div class="status-line" id="statusLine">Ready</div>
+  </div>
+
+  <div class="side-panel">
+    <div>
+      <div class="section-title">Target Image</div>
+      <div class="drop-zone" id="dropZone">
+        <input type="file" id="fileInput" accept="image/*">
+        <div class="label">Drop image here or click to browse</div>
+        <div class="sublabel">PNG, JPG, WebP</div>
+        <img class="target-preview" id="targetPreview" alt="Target preview">
+      </div>
+    </div>
+
+    <div>
+      <div class="section-title">Parameters</div>
+      <div class="param-group">
+        <div class="param-row">
+          <label for="modeSelect">Mode</label>
+          <select id="modeSelect">
+            <option value="optimize">Optimize</option>
+            <option value="greedy">Greedy Refine</option>
+          </select>
+        </div>
+        <div class="param-row">
+          <label for="resolutionInput">Resolution</label>
+          <input type="number" id="resolutionInput" value="128" min="32" max="512" step="32">
+        </div>
+        <div class="param-row">
+          <label for="stepsSlider">Steps</label>
+          <input type="range" id="stepsSlider" min="50" max="2000" value="500" step="50">
+          <span class="range-value" id="stepsValue">500</span>
+        </div>
+        <div class="param-row">
+          <label for="lrInput">Learning rate</label>
+          <input type="number" id="lrInput" value="0.02" min="0.001" max="0.1" step="0.005">
+        </div>
+        <div class="param-row">
+          <label for="streamEverySlider">Stream every</label>
+          <input type="range" id="streamEverySlider" min="1" max="50" value="10">
+          <span class="range-value" id="streamEveryValue">10</span>
+        </div>
+        <div class="param-row">
+          <label for="initialShapesSelect">Initial shapes</label>
+          <select id="initialShapesSelect">
+            <option value="random_5" selected>random (5)</option>
+            <option value="random_3">random (3)</option>
+            <option value="random_10">random (10)</option>
+            <option value="pelican">pelican (9)</option>
+          </select>
+        </div>
+        <div class="param-row">
+          <label for="seedInput">Seed</label>
+          <input type="number" id="seedInput" value="42" min="0" max="9999">
+        </div>
+
+        <div class="greedy-params" id="greedyParams">
+          <div class="param-row">
+            <label for="maxShapesSlider">Max shapes</label>
+            <input type="range" id="maxShapesSlider" min="5" max="100" value="30">
+            <span class="range-value" id="maxShapesValue">30</span>
+          </div>
+          <div class="param-row">
+            <label for="initialStepsInput">Initial steps</label>
+            <input type="number" id="initialStepsInput" value="300" min="100" max="1000" step="50">
+          </div>
+
+          <button class="advanced-toggle" id="advancedToggle">Show advanced</button>
+          <div class="advanced-params" id="advancedParams">
+            <div class="param-row">
+              <label for="settleStepsInput">Settle steps</label>
+              <input type="number" id="settleStepsInput" value="80" min="20" max="500" step="10">
+            </div>
+            <div class="param-row">
+              <label for="reoptStepsInput">Re-optimize steps</label>
+              <input type="number" id="reoptStepsInput" value="150" min="50" max="500" step="10">
+            </div>
+            <div class="param-row">
+              <label for="scaleInput">Scale</label>
+              <input type="number" id="scaleInput" value="1.0" min="0.5" max="2.0" step="0.1">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="run-controls">
+      <button class="btn-primary" id="runBtn" disabled>Run</button>
+      <button class="btn-danger" id="stopBtn" disabled>Stop</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  // State
+  let sessionId = null;
+  let eventSource = null;
+  let imageFile = null;
+  let svgHistory = [];
+  let isPlaying = false;
+  let replayTimer = null;
+
+  // DOM elements
+  const svgContainer = document.getElementById('svgContainer');
+  const svgPlaceholder = document.getElementById('svgPlaceholder');
+  const progressBar = document.getElementById('progressBar');
+  const metricStep = document.getElementById('metricStep');
+  const metricLoss = document.getElementById('metricLoss');
+  const metricShapes = document.getElementById('metricShapes');
+  const statusLine = document.getElementById('statusLine');
+  const notification = document.getElementById('notification');
+  const runBtn = document.getElementById('runBtn');
+  const stopBtn = document.getElementById('stopBtn');
+  const dropZone = document.getElementById('dropZone');
+  const fileInput = document.getElementById('fileInput');
+  const targetPreview = document.getElementById('targetPreview');
+  const modeSelect = document.getElementById('modeSelect');
+  const greedyParams = document.getElementById('greedyParams');
+  const advancedToggle = document.getElementById('advancedToggle');
+  const advancedParams = document.getElementById('advancedParams');
+  const timelineContainer = document.getElementById('timelineContainer');
+  const timelineScrubber = document.getElementById('timelineScrubber');
+  const timelineLabel = document.getElementById('timelineLabel');
+  const replayBtn = document.getElementById('replayBtn');
+  const actionButtons = document.getElementById('actionButtons');
+  const copySvgBtn = document.getElementById('copySvgBtn');
+  const downloadSvgBtn = document.getElementById('downloadSvgBtn');
+  const downloadAllBtn = document.getElementById('downloadAllBtn');
+
+  // Slider sync
+  function syncSlider(slider, display) {
+    display.textContent = slider.value;
+    slider.addEventListener('input', () => { display.textContent = slider.value; });
+  }
+  syncSlider(document.getElementById('stepsSlider'), document.getElementById('stepsValue'));
+  syncSlider(document.getElementById('streamEverySlider'), document.getElementById('streamEveryValue'));
+  syncSlider(document.getElementById('maxShapesSlider'), document.getElementById('maxShapesValue'));
+
+  // Mode switching
+  modeSelect.addEventListener('change', () => {
+    greedyParams.classList.toggle('show', modeSelect.value === 'greedy');
+  });
+
+  // Advanced toggle
+  advancedToggle.addEventListener('click', () => {
+    const showing = advancedParams.classList.toggle('show');
+    advancedToggle.textContent = showing ? 'Hide advanced' : 'Show advanced';
+  });
+
+  // Drop zone
+  dropZone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    dropZone.classList.add('drag-over');
+  });
+  dropZone.addEventListener('dragleave', () => {
+    dropZone.classList.remove('drag-over');
+  });
+  dropZone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dropZone.classList.remove('drag-over');
+    if (e.dataTransfer.files.length > 0) {
+      handleFile(e.dataTransfer.files[0]);
+    }
+  });
+  fileInput.addEventListener('change', () => {
+    if (fileInput.files.length > 0) {
+      handleFile(fileInput.files[0]);
+    }
+  });
+
+  function handleFile(file) {
+    imageFile = file;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      targetPreview.src = e.target.result;
+      targetPreview.style.display = 'block';
+    };
+    reader.readAsDataURL(file);
+    runBtn.disabled = false;
+    setStatus('Image loaded. Click Run to start.', '');
+  }
+
+  function setStatus(text, cls) {
+    statusLine.textContent = text;
+    statusLine.className = 'status-line' + (cls ? ' ' + cls : '');
+  }
+
+  function showNotification(text, duration) {
+    notification.textContent = text;
+    notification.classList.add('show');
+    setTimeout(() => notification.classList.remove('show'), duration || 2000);
+  }
+
+  // Run
+  runBtn.addEventListener('click', startOptimization);
+  stopBtn.addEventListener('click', stopOptimization);
+
+  async function startOptimization() {
+    if (!imageFile) return;
+
+    // Reset
+    svgHistory = [];
+    timelineContainer.style.display = 'none';
+    actionButtons.style.display = 'none';
+    svgPlaceholder.style.display = 'none';
+    progressBar.style.width = '0%';
+    stopReplay();
+
+    setStatus('Uploading image...', 'running');
+    runBtn.disabled = true;
+    stopBtn.disabled = false;
+
+    // Upload
+    const formData = new FormData();
+    formData.append('file', imageFile);
+
+    try {
+      const uploadRes = await fetch('/api/upload', { method: 'POST', body: formData });
+      const uploadData = await uploadRes.json();
+      sessionId = uploadData.session_id;
+    } catch (err) {
+      setStatus('Upload failed: ' + err.message, 'error');
+      runBtn.disabled = false;
+      stopBtn.disabled = true;
+      return;
+    }
+
+    // Build SSE URL with params
+    const params = new URLSearchParams({
+      mode: modeSelect.value,
+      resolution: document.getElementById('resolutionInput').value,
+      steps: document.getElementById('stepsSlider').value,
+      lr: document.getElementById('lrInput').value,
+      stream_every: document.getElementById('streamEverySlider').value,
+      initial_shapes_mode: document.getElementById('initialShapesSelect').value,
+      seed: document.getElementById('seedInput').value,
+    });
+
+    if (modeSelect.value === 'greedy') {
+      params.set('max_shapes', document.getElementById('maxShapesSlider').value);
+      params.set('initial_steps', document.getElementById('initialStepsInput').value);
+      params.set('settle_steps', document.getElementById('settleStepsInput').value);
+      params.set('reoptimize_steps', document.getElementById('reoptStepsInput').value);
+      params.set('scale', document.getElementById('scaleInput').value);
+    }
+
+    setStatus('Optimizing...', 'running');
+
+    // Open SSE
+    eventSource = new EventSource(`/api/stream/${sessionId}?${params.toString()}`);
+    eventSource.onmessage = onSSEMessage;
+    eventSource.onerror = () => {
+      setStatus('Connection lost', 'error');
+      cleanupRun();
+    };
+  }
+
+  function onSSEMessage(event) {
+    const data = JSON.parse(event.data);
+
+    if (data.type === 'progress') {
+      // Update SVG
+      if (data.svg) {
+        svgContainer.innerHTML = data.svg;
+        svgHistory.push({
+          svg: data.svg,
+          step: data.step,
+          loss: data.loss,
+          num_shapes: data.num_shapes,
+        });
+      }
+
+      // Update metrics
+      metricStep.textContent = data.step + '/' + data.total_steps;
+      metricLoss.textContent = data.loss.toFixed(4);
+      metricShapes.textContent = data.num_shapes;
+
+      // Update progress bar
+      const pct = (data.step / data.total_steps) * 100;
+      progressBar.style.width = Math.min(pct, 100) + '%';
+
+    } else if (data.type === 'shape_added') {
+      showNotification('Shape added: ' + data.shape_type + ' (' + data.num_shapes + ' total)', 2000);
+
+    } else if (data.type === 'shape_rejected') {
+      showNotification('Shape rejected: ' + data.shape_type, 1500);
+
+    } else if (data.type === 'complete') {
+      if (data.svg) {
+        svgContainer.innerHTML = data.svg;
+        svgHistory.push({
+          svg: data.svg,
+          step: data.step,
+          loss: data.loss || 0,
+          num_shapes: data.num_shapes,
+        });
+      }
+      progressBar.style.width = '100%';
+      if (data.cancelled) {
+        setStatus('Cancelled', '');
+      } else {
+        setStatus('Complete', 'complete');
+      }
+      cleanupRun();
+      showTimeline();
+
+    } else if (data.type === 'error') {
+      setStatus('Error: ' + data.message, 'error');
+      cleanupRun();
+    }
+  }
+
+  async function stopOptimization() {
+    if (sessionId) {
+      await fetch(`/api/stop/${sessionId}`, { method: 'POST' });
+    }
+    if (eventSource) {
+      eventSource.close();
+      eventSource = null;
+    }
+    setStatus('Stopping...', '');
+  }
+
+  function cleanupRun() {
+    if (eventSource) {
+      eventSource.close();
+      eventSource = null;
+    }
+    runBtn.disabled = !imageFile;
+    stopBtn.disabled = true;
+  }
+
+  // Timeline / Replay
+  function showTimeline() {
+    if (svgHistory.length < 2) return;
+    timelineContainer.style.display = 'flex';
+    actionButtons.style.display = 'flex';
+    timelineScrubber.max = svgHistory.length - 1;
+    timelineScrubber.value = svgHistory.length - 1;
+    timelineLabel.textContent = svgHistory.length - 1;
+  }
+
+  timelineScrubber.addEventListener('input', () => {
+    const idx = parseInt(timelineScrubber.value);
+    scrubToFrame(idx);
+  });
+
+  function scrubToFrame(idx) {
+    if (idx < 0 || idx >= svgHistory.length) return;
+    const frame = svgHistory[idx];
+    svgContainer.innerHTML = frame.svg;
+    timelineLabel.textContent = frame.step;
+    metricStep.textContent = frame.step;
+    metricLoss.textContent = (frame.loss || 0).toFixed(4);
+    metricShapes.textContent = frame.num_shapes;
+  }
+
+  replayBtn.addEventListener('click', toggleReplay);
+
+  function toggleReplay() {
+    if (isPlaying) {
+      stopReplay();
+    } else {
+      isPlaying = true;
+      replayBtn.innerHTML = '&#9646;&#9646;';
+      let idx = parseInt(timelineScrubber.value);
+      if (idx >= svgHistory.length - 1) idx = 0;
+      replayTimer = setInterval(() => {
+        idx++;
+        if (idx >= svgHistory.length) {
+          stopReplay();
+          return;
+        }
+        timelineScrubber.value = idx;
+        scrubToFrame(idx);
+      }, 100);
+    }
+  }
+
+  function stopReplay() {
+    isPlaying = false;
+    replayBtn.innerHTML = '&#9654;';
+    if (replayTimer) {
+      clearInterval(replayTimer);
+      replayTimer = null;
+    }
+  }
+
+  // Copy SVG
+  copySvgBtn.addEventListener('click', () => {
+    const svg = svgContainer.innerHTML;
+    navigator.clipboard.writeText(svg).then(() => {
+      showNotification('Copied!', 1500);
+    }).catch(() => {
+      showNotification('Copy failed', 1500);
+    });
+  });
+
+  // Download SVG
+  downloadSvgBtn.addEventListener('click', () => {
+    const idx = parseInt(timelineScrubber.value) || svgHistory.length - 1;
+    const frame = svgHistory[idx];
+    if (!frame) return;
+    const blob = new Blob([frame.svg], { type: 'image/svg+xml' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `pelican_step${String(frame.step).padStart(3, '0')}_shapes${frame.num_shapes}.svg`;
+    a.click();
+    URL.revokeObjectURL(url);
+  });
+
+  // Download All as ZIP
+  downloadAllBtn.addEventListener('click', async () => {
+    if (svgHistory.length === 0) return;
+    showNotification('Preparing ZIP...', 3000);
+
+    // Minimal ZIP implementation for SVG text files
+    const files = svgHistory.map((frame, i) => ({
+      name: `frame_${String(i).padStart(4, '0')}_step${frame.step}.svg`,
+      content: frame.svg,
+    }));
+
+    const zip = buildZip(files);
+    const blob = new Blob([zip], { type: 'application/zip' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'pelican_frames.zip';
+    a.click();
+    URL.revokeObjectURL(url);
+    showNotification('Downloaded!', 1500);
+  });
+
+  // Minimal ZIP builder (no compression, store only)
+  function buildZip(files) {
+    const encoder = new TextEncoder();
+    const parts = [];
+    const centralDir = [];
+    let offset = 0;
+
+    for (const file of files) {
+      const nameBytes = encoder.encode(file.name);
+      const contentBytes = encoder.encode(file.content);
+
+      // Local file header
+      const header = new Uint8Array(30 + nameBytes.length);
+      const hv = new DataView(header.buffer);
+      hv.setUint32(0, 0x04034b50, true); // signature
+      hv.setUint16(4, 20, true); // version needed
+      hv.setUint16(6, 0, true);  // flags
+      hv.setUint16(8, 0, true);  // compression (store)
+      hv.setUint16(10, 0, true); // mod time
+      hv.setUint16(12, 0, true); // mod date
+      hv.setUint32(14, crc32(contentBytes), true);
+      hv.setUint32(18, contentBytes.length, true); // compressed
+      hv.setUint32(22, contentBytes.length, true); // uncompressed
+      hv.setUint16(26, nameBytes.length, true);
+      hv.setUint16(28, 0, true); // extra length
+      header.set(nameBytes, 30);
+
+      // Central directory entry
+      const cdEntry = new Uint8Array(46 + nameBytes.length);
+      const cv = new DataView(cdEntry.buffer);
+      cv.setUint32(0, 0x02014b50, true);
+      cv.setUint16(4, 20, true);
+      cv.setUint16(6, 20, true);
+      cv.setUint16(8, 0, true);
+      cv.setUint16(10, 0, true);
+      cv.setUint16(12, 0, true);
+      cv.setUint16(14, 0, true);
+      cv.setUint32(16, crc32(contentBytes), true);
+      cv.setUint32(20, contentBytes.length, true);
+      cv.setUint32(24, contentBytes.length, true);
+      cv.setUint16(28, nameBytes.length, true);
+      cv.setUint16(30, 0, true);
+      cv.setUint16(32, 0, true);
+      cv.setUint16(34, 0, true);
+      cv.setUint16(36, 0, true);
+      cv.setUint32(38, 0, true);
+      cv.setUint32(42, offset, true);
+      cdEntry.set(nameBytes, 46);
+
+      parts.push(header, contentBytes);
+      centralDir.push(cdEntry);
+      offset += header.length + contentBytes.length;
+    }
+
+    const cdOffset = offset;
+    let cdSize = 0;
+    for (const cd of centralDir) {
+      parts.push(cd);
+      cdSize += cd.length;
+    }
+
+    // End of central directory
+    const eocd = new Uint8Array(22);
+    const ev = new DataView(eocd.buffer);
+    ev.setUint32(0, 0x06054b50, true);
+    ev.setUint16(4, 0, true);
+    ev.setUint16(6, 0, true);
+    ev.setUint16(8, files.length, true);
+    ev.setUint16(10, files.length, true);
+    ev.setUint32(12, cdSize, true);
+    ev.setUint32(16, cdOffset, true);
+    ev.setUint16(20, 0, true);
+    parts.push(eocd);
+
+    // Combine
+    const total = parts.reduce((s, p) => s + p.length, 0);
+    const result = new Uint8Array(total);
+    let pos = 0;
+    for (const part of parts) {
+      result.set(part, pos);
+      pos += part.length;
+    }
+    return result;
+  }
+
+  // CRC32 for ZIP
+  function crc32(data) {
+    let crc = 0xFFFFFFFF;
+    for (let i = 0; i < data.length; i++) {
+      crc ^= data[i];
+      for (let j = 0; j < 8; j++) {
+        crc = (crc >>> 1) ^ (crc & 1 ? 0xEDB88320 : 0);
+      }
+    }
+    return (crc ^ 0xFFFFFFFF) >>> 0;
+  }
+})();
+</script>
+
+</body>
+</html>

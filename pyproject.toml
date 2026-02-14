@@ -52,6 +52,15 @@ dependencies = [
 ]
 
 
+# ---- Optional dependencies ----
+
+[project.optional-dependencies]
+web = [
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.34.0",
+    "python-multipart>=0.0.9",
+]
+
 # ---- Dev dependencies ----
 
 [dependency-groups]

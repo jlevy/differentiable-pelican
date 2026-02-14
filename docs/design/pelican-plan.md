@@ -389,7 +389,9 @@ two segments”).
 
 - `imageio`: create animated GIFs
 
-- (Phase 2) Simple web viewer with auto-refresh
+- (Phase 2) Simple web viewer with auto-refresh — see
+  [web UI spec](../project/specs/active/plan-2026-02-14-pelican-web-ui.md)
+  (`pelican serve` with FastAPI + SSE streaming)
 
 **LLM Integration** (Phase 2):
 
@@ -1450,7 +1452,10 @@ discrete structure.
 
 4. **Focus on core**: Spend time on algorithms, not UI polish
 
-**Future**: Phase 2+ could add lightweight web viewer for browsing results.
+**Future**: A `pelican serve` web UI is planned — see the
+[web UI spec](../project/specs/active/plan-2026-02-14-pelican-web-ui.md).
+It adds a local FastAPI server with drag-and-drop image upload, live SSE streaming of
+intermediate SVG frames, animation replay, and clipboard/download export.
 
 * * *
 
@@ -1535,7 +1540,8 @@ discrete structure.
 
 5. **CLIP-guided loss**: Semantic matching via CLIP embeddings as auxiliary loss
 
-6. **Interactive web viewer**: Real-time parameter tuning in browser
+6. **Interactive web viewer**: Real-time parameter tuning in browser — **spec written**,
+   see [web UI spec](../project/specs/active/plan-2026-02-14-pelican-web-ui.md)
 
 7. **Differentiable stroke**: Render line art and stroke-based shapes
 
