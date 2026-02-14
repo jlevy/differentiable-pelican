@@ -1,51 +1,73 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
   <rect width="128" height="128" fill="white"/>
   <!-- Shape 0: Ellipse -->
-  <ellipse cx="53.61" cy="67.89" rx="20.67" ry="36.46" fill="rgb(128,128,128)" transform="rotate(58.67 53.61 67.89)"/>
+  <ellipse cx="53.37" cy="67.70" rx="21.29" ry="33.76" fill="rgb(130,130,130)" transform="rotate(58.21 53.37 67.70)"/>
   <!-- Shape 1: Ellipse -->
-  <ellipse cx="88.29" cy="52.30" rx="6.60" ry="11.72" fill="rgb(144,144,144)" transform="rotate(-167.24 88.29 52.30)"/>
+  <ellipse cx="67.37" cy="59.03" rx="14.63" ry="25.66" fill="rgb(156,156,156)" transform="rotate(-101.66 67.37 59.03)"/>
   <!-- Shape 2: Circle -->
-  <circle cx="78.57" cy="24.13" r="11.16" fill="rgb(160,160,160)"/>
+  <circle cx="78.41" cy="24.07" r="11.10" fill="rgb(137,137,137)"/>
   <!-- Shape 3: Triangle -->
-  <polygon points="87.75,19.30 79.27,35.13 118.19,54.20" fill="rgb(53,53,53)"/>
+  <polygon points="88.45,20.80 107.79,49.69 115.74,52.35" fill="rgb(0,0,0)"/>
   <!-- Shape 4: Triangle -->
-  <polygon points="80.37,17.27 103.46,45.53 73.15,36.16" fill="rgb(118,118,118)"/>
+  <polygon points="87.61,20.74 115.89,51.06 72.34,35.04" fill="rgb(70,70,70)"/>
   <!-- Shape 5: Ellipse -->
-  <ellipse cx="54.10" cy="65.45" rx="27.88" ry="9.71" fill="rgb(172,172,172)" transform="rotate(-29.70 54.10 65.45)"/>
+  <ellipse cx="40.85" cy="73.38" rx="10.88" ry="8.24" fill="rgb(171,171,171)" transform="rotate(-101.37 40.85 73.38)"/>
   <!-- Shape 6: Triangle -->
-  <polygon points="41.59,91.41 17.35,81.47 13.58,106.45" fill="rgb(110,110,110)"/>
+  <polygon points="41.23,91.52 19.78,79.21 14.86,105.80" fill="rgb(100,100,100)"/>
   <!-- Shape 7: Circle -->
-  <circle cx="80.58" cy="24.73" r="0.99" fill="rgb(0,0,0)"/>
+  <circle cx="81.43" cy="24.36" r="0.00" fill="rgb(0,0,0)"/>
   <!-- Shape 8: Ellipse -->
-  <ellipse cx="57.73" cy="104.21" rx="15.28" ry="4.63" fill="rgb(21,21,21)" transform="rotate(38.80 57.73 104.21)"/>
+  <ellipse cx="57.77" cy="102.44" rx="9.82" ry="6.86" fill="rgb(44,44,44)" transform="rotate(56.86 57.77 102.44)"/>
   <!-- Shape 9: Circle -->
-  <circle cx="68.80" cy="22.56" r="2.68" fill="rgb(114,114,114)"/>
+  <circle cx="66.78" cy="22.51" r="0.08" fill="rgb(0,0,0)"/>
   <!-- Shape 10: Ellipse -->
-  <ellipse cx="78.30" cy="51.00" rx="0.02" ry="0.23" fill="rgb(254,254,254)" transform="rotate(-18.25 78.30 51.00)"/>
+  <ellipse cx="73.84" cy="63.17" rx="0.00" ry="0.10" fill="rgb(0,0,0)" transform="rotate(37.88 73.84 63.17)"/>
   <!-- Shape 11: Triangle -->
-  <polygon points="43.68,48.60 29.90,60.79 37.40,51.65" fill="rgb(0,0,0)"/>
+  <polygon points="20.53,79.48 24.11,70.68 28.65,63.93" fill="rgb(0,0,0)"/>
   <!-- Shape 12: Circle -->
-  <circle cx="16.67" cy="99.53" r="2.15" fill="rgb(0,0,0)"/>
+  <circle cx="16.32" cy="99.75" r="2.25" fill="rgb(0,0,0)"/>
   <!-- Shape 13: Ellipse -->
-  <ellipse cx="45.56" cy="99.82" rx="4.22" ry="1.98" fill="rgb(0,0,0)" transform="rotate(-11.08 45.56 99.82)"/>
+  <ellipse cx="16.99" cy="89.59" rx="1.14" ry="6.53" fill="rgb(67,67,67)" transform="rotate(14.03 16.99 89.59)"/>
   <!-- Shape 14: Triangle -->
-  <polygon points="69.43,110.62 65.85,105.27 76.69,108.50" fill="rgb(0,0,0)"/>
+  <polygon points="62.03,113.04 65.17,105.05 76.62,108.51" fill="rgb(0,0,0)"/>
   <!-- Shape 15: Circle -->
-  <circle cx="83.54" cy="67.64" r="0.00" fill="rgb(7,7,7)"/>
+  <circle cx="80.38" cy="52.67" r="0.00" fill="rgb(2,2,2)"/>
   <!-- Shape 16: Ellipse -->
-  <ellipse cx="54.51" cy="45.56" rx="11.23" ry="0.52" fill="rgb(0,0,0)" transform="rotate(-15.22 54.51 45.56)"/>
+  <ellipse cx="39.34" cy="51.37" rx="3.50" ry="0.67" fill="rgb(0,0,0)" transform="rotate(-36.85 39.34 51.37)"/>
   <!-- Shape 17: Triangle -->
-  <polygon points="69.51,42.50 85.23,45.96 85.56,47.81" fill="rgb(0,0,0)"/>
+  <polygon points="65.44,42.59 83.42,46.40 73.19,42.34" fill="rgb(0,0,0)"/>
   <!-- Shape 18: Circle -->
-  <circle cx="86.08" cy="32.01" r="0.56" fill="rgb(213,213,213)"/>
-  <!-- Shape 19: Ellipse -->
-  <ellipse cx="79.88" cy="66.86" rx="0.60" ry="0.53" fill="rgb(196,196,196)" transform="rotate(-28.19 79.88 66.86)"/>
-  <!-- Shape 20: Triangle -->
-  <polygon points="26.45,46.80 29.00,42.81 27.58,43.71" fill="rgb(251,251,251)"/>
+  <circle cx="98.90" cy="42.05" r="0.39" fill="rgb(254,254,254)"/>
+  <!-- Shape 19: Circle -->
+  <circle cx="86.51" cy="45.88" r="2.38" fill="rgb(64,64,64)"/>
+  <!-- Shape 20: Ellipse -->
+  <ellipse cx="91.19" cy="49.17" rx="8.90" ry="4.14" fill="rgb(161,161,161)" transform="rotate(-91.31 91.19 49.17)"/>
   <!-- Shape 21: Circle -->
-  <circle cx="85.68" cy="41.63" r="1.14" fill="rgb(14,14,14)"/>
+  <circle cx="47.48" cy="98.43" r="3.89" fill="rgb(6,6,6)"/>
   <!-- Shape 22: Ellipse -->
-  <ellipse cx="85.84" cy="65.11" rx="2.02" ry="0.70" fill="rgb(92,92,92)" transform="rotate(-36.49 85.84 65.11)"/>
-  <!-- Shape 23: Circle -->
-  <circle cx="57.60" cy="102.14" r="7.29" fill="rgb(53,53,53)"/>
+  <ellipse cx="75.28" cy="21.14" rx="5.97" ry="3.80" fill="rgb(194,194,194)" transform="rotate(-56.40 75.28 21.14)"/>
+  <!-- Shape 23: Triangle -->
+  <polygon points="82.30,26.30 77.96,23.04 79.70,26.18" fill="rgb(26,26,26)"/>
+  <!-- Shape 24: Circle -->
+  <circle cx="67.41" cy="112.30" r="2.31" fill="rgb(0,0,0)"/>
+  <!-- Shape 25: Ellipse -->
+  <ellipse cx="86.66" cy="35.62" rx="11.30" ry="5.74" fill="rgb(132,132,132)" transform="rotate(23.27 86.66 35.62)"/>
+  <!-- Shape 26: Triangle -->
+  <polygon points="31.48,59.42 35.88,54.27 33.83,55.84" fill="rgb(0,0,0)"/>
+  <!-- Shape 27: Circle -->
+  <circle cx="85.98" cy="42.18" r="0.90" fill="rgb(0,0,0)"/>
+  <!-- Shape 28: Ellipse -->
+  <ellipse cx="53.54" cy="78.25" rx="13.79" ry="1.45" fill="rgb(0,0,0)" transform="rotate(-29.10 53.54 78.25)"/>
+  <!-- Shape 29: Triangle -->
+  <polygon points="99.81,59.76 97.28,58.20 97.80,59.88" fill="rgb(253,253,253)"/>
+  <!-- Shape 30: Circle -->
+  <circle cx="56.05" cy="45.51" r="0.32" fill="rgb(0,0,0)"/>
+  <!-- Shape 31: Ellipse -->
+  <ellipse cx="51.86" cy="80.13" rx="3.51" ry="0.56" fill="rgb(218,218,218)" transform="rotate(-28.74 51.86 80.13)"/>
+  <!-- Shape 32: Triangle -->
+  <polygon points="35.40,91.01 21.04,96.84 21.22,102.61" fill="rgb(179,179,179)"/>
+  <!-- Shape 33: Circle -->
+  <circle cx="68.20" cy="49.21" r="0.98" fill="rgb(63,63,63)"/>
+  <!-- Shape 34: Ellipse -->
+  <ellipse cx="62.24" cy="50.45" rx="2.97" ry="1.16" fill="rgb(87,87,87)" transform="rotate(-14.86 62.24 50.45)"/>
 </svg>

@@ -121,9 +121,22 @@ def optimize(
         # Compute loss
         loss, breakdown = total_loss(rendered, target, shapes)
 
+        # Check for NaN before updating parameters (NaN gradients corrupt params
+        # irreversibly and clip_grad_norm_ cannot clip NaN values)
+        if torch.isnan(loss):
+            print(f"Warning: NaN loss at step {step}, stopping")
+            break
+
         # Backward pass
         optimizer.zero_grad()
         loss.backward()
+
+        # Check for NaN gradients — skip step entirely if any are found
+        has_nan_grad = any(p.grad is not None and torch.isnan(p.grad).any() for p in params)
+        if has_nan_grad:
+            print(f"Warning: NaN gradient at step {step}, skipping update")
+            optimizer.zero_grad()
+            continue
 
         # Gradient clipping
         torch.nn.utils.clip_grad_norm_(params, max_norm=1.0)
@@ -135,8 +148,11 @@ def optimize(
         # Track metrics
         loss_history.append(breakdown)
 
-        # Save best parameters
-        if breakdown["total"] < best_loss:
+        # Save best parameters (only if no params are NaN)
+        has_nan_params = any(
+            torch.isnan(v).any() for shape in shapes for v in shape.state_dict().values()
+        )
+        if breakdown["total"] < best_loss and not has_nan_params:
             best_loss = breakdown["total"]
             best_params = {
                 i: {k: v.detach().clone() for k, v in shape.state_dict().items()}
@@ -158,11 +174,6 @@ def optimize(
                 rendered_np = (rendered.detach().cpu().numpy() * 255).astype(np.uint8)
                 img = Image.fromarray(rendered_np, mode="L")
                 img.save(frames_dir / f"frame_{step:04d}.png")
-
-        # Check for NaN
-        if torch.isnan(loss):
-            print(f"Warning: NaN loss at step {step}, stopping")
-            break
 
     # Restore best parameters
     if best_params:

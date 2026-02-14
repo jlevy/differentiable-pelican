@@ -1,21 +1,21 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
   <rect width="128" height="128" fill="white"/>
   <!-- Shape 0: Ellipse -->
-  <ellipse cx="53.53" cy="67.35" rx="21.21" ry="35.10" fill="rgb(120,120,120)" transform="rotate(58.88 53.53 67.35)"/>
+  <ellipse cx="53.50" cy="67.37" rx="21.28" ry="34.53" fill="rgb(113,113,113)" transform="rotate(59.16 53.50 67.37)"/>
   <!-- Shape 1: Ellipse -->
-  <ellipse cx="76.36" cy="59.45" rx="11.38" ry="22.71" fill="rgb(149,149,149)" transform="rotate(-127.27 76.36 59.45)"/>
+  <ellipse cx="69.00" cy="58.30" rx="13.70" ry="26.35" fill="rgb(149,149,149)" transform="rotate(-103.95 69.00 58.30)"/>
   <!-- Shape 2: Circle -->
-  <circle cx="78.33" cy="24.10" r="11.20" fill="rgb(153,153,153)"/>
+  <circle cx="78.15" cy="23.99" r="11.03" fill="rgb(153,153,153)"/>
   <!-- Shape 3: Triangle -->
-  <polygon points="87.75,19.49 78.33,34.33 116.64,52.12" fill="rgb(54,54,54)"/>
+  <polygon points="87.80,19.50 80.41,34.46 116.21,52.15" fill="rgb(33,33,33)"/>
   <!-- Shape 4: Triangle -->
-  <polygon points="80.04,19.06 114.59,52.09 72.93,35.57" fill="rgb(110,110,110)"/>
+  <polygon points="80.35,18.55 114.32,51.64 73.01,35.59" fill="rgb(108,108,108)"/>
   <!-- Shape 5: Ellipse -->
-  <ellipse cx="46.10" cy="68.47" rx="17.29" ry="10.44" fill="rgb(171,171,171)" transform="rotate(-45.23 46.10 68.47)"/>
+  <ellipse cx="45.30" cy="69.08" rx="16.39" ry="10.47" fill="rgb(171,171,171)" transform="rotate(-44.75 45.30 69.08)"/>
   <!-- Shape 6: Triangle -->
-  <polygon points="40.08,92.56 18.60,78.87 12.80,106.33" fill="rgb(104,104,104)"/>
+  <polygon points="39.73,92.61 18.56,79.21 12.96,105.99" fill="rgb(97,97,97)"/>
   <!-- Shape 7: Circle -->
-  <circle cx="80.52" cy="24.73" r="1.04" fill="rgb(7,7,7)"/>
+  <circle cx="80.77" cy="25.07" r="1.02" fill="rgb(7,7,7)"/>
   <!-- Shape 8: Ellipse -->
-  <ellipse cx="58.27" cy="103.11" rx="15.45" ry="6.76" fill="rgb(58,58,58)" transform="rotate(36.46 58.27 103.11)"/>
+  <ellipse cx="58.32" cy="103.13" rx="15.44" ry="6.78" fill="rgb(53,53,53)" transform="rotate(36.06 58.32 103.13)"/>
 </svg>
