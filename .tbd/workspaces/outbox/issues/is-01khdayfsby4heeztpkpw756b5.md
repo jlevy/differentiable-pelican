@@ -15,15 +15,17 @@ child_order_hints:
   - is-01khdb0c22mrhyt68egq9zfmj1
   - is-01khdb0fjgt03dv8ck2ffb5g26
   - is-01khdb0p99xeykhpsm74aatcqj
+close_reason: All child beads complete
+closed_at: 2026-02-14T06:32:03.133Z
 created_at: 2026-02-14T05:46:00.363Z
 dependencies: []
 id: is-01khdayfsby4heeztpkpw756b5
 kind: epic
 labels: []
 priority: 1
-status: open
+status: closed
 title: "Spec: Interactive Web UI for Differentiable Pelican"
 type: is
-updated_at: 2026-02-14T05:47:12.552Z
-version: 16
+updated_at: 2026-02-14T06:32:33.790Z
+version: 18
 ---

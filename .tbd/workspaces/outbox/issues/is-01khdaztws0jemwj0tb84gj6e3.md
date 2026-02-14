@@ -1,4 +1,6 @@
 ---
+close_reason: Frontend EventSource with live SVG, progress, loss display
+closed_at: 2026-02-14T06:24:22.773Z
 created_at: 2026-02-14T05:46:44.504Z
 dependencies:
   - target: is-01khdb055cgrvsvy1jsnrswcf4
@@ -10,9 +12,9 @@ kind: task
 labels: []
 parent_id: is-01khdayfsby4heeztpkpw756b5
 priority: 1
-status: open
+status: closed
 title: "Frontend: live SVG streaming via EventSource with progress bar, step counter, and loss display"
 type: is
-updated_at: 2026-02-14T05:48:03.885Z
-version: 3
+updated_at: 2026-02-14T06:32:33.868Z
+version: 5
 ---
