@@ -1,15 +1,17 @@
 from __future__ import annotations
 
+import io
 import json
 import shutil
 import tempfile
 import threading
 import time
+import zipfile
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from pathlib import Path
 from queue import Empty, Queue
-from typing import TypedDict
+from typing import Any
 from uuid import uuid4
 
 import torch
@@ -28,17 +30,8 @@ from differentiable_pelican.svg_export import shapes_to_svg_string
 STATIC_DIR = Path(__file__).parent / "static"
 
 
-class Session(TypedDict, total=False):
-    """In-memory state for an optimization session."""
-
-    image_path: Path
-    stop_event: threading.Event
-    thread: threading.Thread | None
-    queue: Queue[dict]
-    running: bool
-
-
-sessions: dict[str, Session] = {}
+# Session state: image_path, stop_event, thread, queue, running, frames_dir
+sessions: dict[str, dict[str, Any]] = {}
 _temp_dir: Path | None = None
 
 
@@ -67,7 +60,7 @@ async def index() -> HTMLResponse:
 
 
 @app.post("/api/upload")
-async def upload(file: UploadFile) -> dict:
+async def upload(file: UploadFile) -> dict[str, str]:
     """Accept an image upload, save to temp dir, return session_id."""
     session_id = str(uuid4())
     session_dir = _get_temp_dir() / session_id
@@ -87,6 +80,27 @@ async def upload(file: UploadFile) -> dict:
     return {"session_id": session_id}
 
 
+def _save_frame(session_id: str, svg_str: str, step: int, loss: float, num_shapes: int) -> None:
+    """Persist a single SVG frame to the session's frames directory."""
+    session = sessions[session_id]
+    frames_dir = session.get("frames_dir")
+    if frames_dir is None:
+        frames_dir = _get_temp_dir() / session_id / "frames"
+        frames_dir.mkdir(parents=True, exist_ok=True)
+        session["frames_dir"] = frames_dir
+
+    filename = f"frame_{step:06d}.svg"
+    (frames_dir / filename).write_text(svg_str)
+
+    # Append to metadata
+    metadata_path = frames_dir / "metadata.json"
+    entries: list[dict[str, Any]] = []
+    if metadata_path.exists():
+        entries = json.loads(metadata_path.read_text())
+    entries.append({"step": step, "loss": loss, "num_shapes": num_shapes, "file": filename})
+    metadata_path.write_text(json.dumps(entries))
+
+
 def _run_optimize(
     session_id: str,
     shapes: list[Shape],
@@ -100,7 +114,6 @@ def _run_optimize(
     session = sessions[session_id]
     q = session["queue"]
     stop_event = session["stop_event"]
-    device = target.device
 
     def progress_callback(step: int, total_steps: int, loss_breakdown: dict[str, float]) -> None:
         if stop_event.is_set():
@@ -108,12 +121,14 @@ def _run_optimize(
 
         if step % stream_every == 0 or step == total_steps - 1:
             svg_str = shapes_to_svg_string(shapes, resolution, resolution)
+            loss = loss_breakdown.get("total", 0.0)
+            _save_frame(session_id, svg_str, step, loss, len(shapes))
             q.put(
                 {
                     "type": "progress",
                     "step": step,
                     "total_steps": total_steps,
-                    "loss": loss_breakdown.get("total", 0.0),
+                    "loss": loss,
                     "loss_breakdown": loss_breakdown,
                     "num_shapes": len(shapes),
                     "svg": svg_str,
@@ -161,7 +176,6 @@ def _run_greedy(
 ) -> None:
     """Run greedy refinement in a background thread, pushing SSE events to the queue."""
     import copy
-    import random
 
     session = sessions[session_id]
     q = session["queue"]
@@ -179,12 +193,14 @@ def _run_greedy(
             global_step = step_offset + step
             if step % stream_every == 0 or step == total_steps - 1:
                 svg_str = shapes_to_svg_string(shapes, resolution, resolution)
+                loss = loss_breakdown.get("total", 0.0)
+                _save_frame(session_id, svg_str, global_step, loss, len(shapes))
                 q.put(
                     {
                         "type": "progress",
                         "step": global_step,
                         "total_steps": total,
-                        "loss": loss_breakdown.get("total", 0.0),
+                        "loss": loss,
                         "loss_breakdown": loss_breakdown,
                         "num_shapes": len(shapes),
                         "svg": svg_str,
@@ -337,7 +353,7 @@ async def stream(
 
     image_path = session["image_path"]
     device = torch.device("cpu")
-    target = load_target_image(str(image_path), resolution, device)
+    target = load_target_image(Path(image_path), resolution, device)
 
     # Create initial shapes
     import random as _random
@@ -403,7 +419,7 @@ async def stream(
 
 
 @app.post("/api/stop/{session_id}")
-async def stop(session_id: str) -> dict:
+async def stop(session_id: str) -> dict[str, str]:
     """Cancel a running optimization."""
     if session_id not in sessions:
         return {"error": "Unknown session"}
@@ -414,7 +430,7 @@ async def stop(session_id: str) -> dict:
 
 
 @app.get("/api/status")
-async def status() -> dict:
+async def status() -> dict[str, Any]:
     """Return server status."""
     running_sessions = [sid for sid, s in sessions.items() if s.get("running")]
     return {
@@ -424,12 +440,47 @@ async def status() -> dict:
     }
 
 
+@app.get("/api/download/{session_id}")
+async def download(session_id: str) -> StreamingResponse:
+    """Download all SVG frames for a session as a ZIP file."""
+    if session_id not in sessions:
+        return StreamingResponse(  # pyright: ignore
+            iter([b"Session not found"]),
+            status_code=404,
+            media_type="text/plain",
+        )
+
+    session = sessions[session_id]
+    frames_dir = session.get("frames_dir")
+
+    if frames_dir is None or not frames_dir.exists():
+        return StreamingResponse(  # pyright: ignore
+            iter([b"No frames available"]),
+            status_code=404,
+            media_type="text/plain",
+        )
+
+    # Build ZIP in memory
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
+        for svg_file in sorted(frames_dir.glob("*.svg")):
+            zf.writestr(svg_file.name, svg_file.read_text())
+        metadata_path = frames_dir / "metadata.json"
+        if metadata_path.exists():
+            zf.writestr("metadata.json", metadata_path.read_text())
+    buf.seek(0)
+
+    return StreamingResponse(
+        iter([buf.read()]),
+        media_type="application/zip",
+        headers={"Content-Disposition": f'attachment; filename="pelican_{session_id[:8]}_frames.zip"'},
+    )
+
+
 ## Tests
 
 
 def test_upload_creates_session():
-    import asyncio
-
     from fastapi.testclient import TestClient
 
     client = TestClient(app)
@@ -478,3 +529,37 @@ def test_stop_unknown_session():
     assert response.status_code == 200
     data = response.json()
     assert "error" in data
+
+
+def test_save_frame_creates_files():
+    session_id = "test-frames-" + str(uuid4())[:8]
+    session_dir = _get_temp_dir() / session_id
+    session_dir.mkdir(parents=True, exist_ok=True)
+
+    sessions[session_id] = {
+        "image_path": session_dir / "dummy.png",
+        "stop_event": threading.Event(),
+        "thread": None,
+        "queue": Queue(),
+        "running": False,
+    }
+
+    _save_frame(session_id, "<svg>test1</svg>", 0, 0.5, 3)
+    _save_frame(session_id, "<svg>test2</svg>", 10, 0.4, 3)
+
+    frames_dir = sessions[session_id]["frames_dir"]
+    assert (frames_dir / "frame_000000.svg").exists()
+    assert (frames_dir / "frame_000010.svg").exists()
+
+    metadata = json.loads((frames_dir / "metadata.json").read_text())
+    assert len(metadata) == 2
+    assert metadata[0]["step"] == 0
+    assert metadata[1]["step"] == 10
+
+
+def test_download_unknown_session():
+    from fastapi.testclient import TestClient
+
+    client = TestClient(app)
+    response = client.get("/api/download/nonexistent")
+    assert response.status_code == 404
