@@ -8,6 +8,30 @@ from pathlib import Path
 from differentiable_pelican.geometry import Circle, Ellipse, Shape, Triangle
 
 
+def shapes_to_svg_string(
+    shapes: Sequence[Shape],
+    width: int,
+    height: int,
+) -> str:
+    """
+    Render shapes to an SVG markup string without writing to disk.
+
+    Used by the web UI to stream SVG frames over SSE.
+    """
+    svg_parts = [
+        f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {width} {height}" width="{width}" height="{height}">'
+    ]
+    svg_parts.append(f'  <rect width="{width}" height="{height}" fill="white"/>')
+
+    for i, shape in enumerate(shapes):
+        svg_element = _shape_to_svg_element(shape, width, height)
+        svg_parts.append(f"  <!-- Shape {i}: {type(shape).__name__} -->")
+        svg_parts.append(f"  {svg_element}")
+
+    svg_parts.append("</svg>")
+    return "\n".join(svg_parts)
+
+
 def shapes_to_svg(
     shapes: Sequence[Shape],
     width: int,
@@ -23,19 +47,7 @@ def shapes_to_svg(
         height: SVG viewBox height
         output_path: Path to save SVG file
     """
-    svg_parts = [
-        f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {width} {height}" width="{width}" height="{height}">'
-    ]
-    svg_parts.append(f'  <rect width="{width}" height="{height}" fill="white"/>')
-
-    for i, shape in enumerate(shapes):
-        svg_element = _shape_to_svg_element(shape, width, height)
-        svg_parts.append(f"  <!-- Shape {i}: {type(shape).__name__} -->")
-        svg_parts.append(f"  {svg_element}")
-
-    svg_parts.append("</svg>")
-
-    svg_content = "\n".join(svg_parts)
+    svg_content = shapes_to_svg_string(shapes, width, height)
     output_path.write_text(svg_content)
 
 
@@ -142,8 +154,7 @@ def composite_stages_svg(
 
         # Nested SVG
         lines.append(
-            f'  <svg x="{x}" y="{y}" width="{img_size}" height="{img_size}" '
-            f'viewBox="0 0 128 128">'
+            f'  <svg x="{x}" y="{y}" width="{img_size}" height="{img_size}" viewBox="0 0 128 128">'
         )
         lines.append(f"    {inner}")
         lines.append("  </svg>")
@@ -168,6 +179,55 @@ def composite_stages_svg(
 
 
 ## Tests
+
+
+def test_shapes_to_svg_string_returns_valid_svg():
+    import xml.etree.ElementTree as ET
+
+    import torch
+
+    from differentiable_pelican.geometry import Circle, Ellipse, Triangle
+
+    device = torch.device("cpu")
+    shapes: list[Shape] = [
+        Circle(cx=0.5, cy=0.5, radius=0.1, device=device),
+        Ellipse(cx=0.3, cy=0.3, rx=0.15, ry=0.1, rotation=0.0, device=device),
+        Triangle(v0=(0.2, 0.2), v1=(0.4, 0.2), v2=(0.3, 0.4), device=device),
+    ]
+
+    svg_str = shapes_to_svg_string(shapes, 100, 100)
+    assert isinstance(svg_str, str)
+    assert "<circle" in svg_str
+    assert "<ellipse" in svg_str
+    assert "<polygon" in svg_str
+
+    # Must be valid XML
+    root = ET.fromstring(svg_str)
+    assert "svg" in root.tag
+
+
+def test_shapes_to_svg_string_matches_file_output(tmp_path: Path):
+    import torch
+
+    from differentiable_pelican.geometry import Circle
+
+    device = torch.device("cpu")
+    shapes: list[Shape] = [Circle(cx=0.5, cy=0.5, radius=0.2, device=device)]
+
+    svg_str = shapes_to_svg_string(shapes, 128, 128)
+
+    output_path = tmp_path / "test.svg"
+    shapes_to_svg(shapes, 128, 128, output_path)
+    file_content = output_path.read_text()
+
+    assert svg_str == file_content
+
+
+def test_shapes_to_svg_string_empty_shapes():
+
+    svg_str = shapes_to_svg_string([], 64, 64)
+    assert 'viewBox="0 0 64 64"' in svg_str
+    assert "<rect" in svg_str
 
 
 def test_export_svg_creates_file(tmp_path: Path):

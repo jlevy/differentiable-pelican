@@ -44,6 +44,30 @@ class GreedyResult(TypedDict):
     final_shapes: int
 
 
+def create_random_shapes(
+    count: int,
+    device: torch.device,
+    scale: float = 1.0,
+    seed: int | None = None,
+) -> tuple[list[Shape], list[str]]:
+    """
+    Create `count` random shapes of mixed types, cycling through circle/ellipse/triangle.
+
+    Returns (shapes, names) in the same format as `create_initial_pelican()`.
+    """
+    if seed is not None:
+        random.seed(seed)
+
+    shapes: list[Shape] = []
+    names: list[str] = []
+    for i in range(count):
+        shape_type = SHAPE_TYPES[i % len(SHAPE_TYPES)]
+        shape = create_random_shape(shape_type, device, scale=scale)
+        shapes.append(shape)
+        names.append(f"{shape_type}_{i}")
+    return shapes, names
+
+
 def create_random_shape(
     shape_type: str,
     device: torch.device,
@@ -75,7 +99,9 @@ def create_random_shape(
         rx = base_size * random.uniform(0.5, 2.0)
         ry = base_size * random.uniform(0.3, 1.5)
         rotation = random.uniform(-1.5, 1.5)
-        return Ellipse(cx=cx, cy=cy, rx=rx, ry=ry, rotation=rotation, device=device, intensity=intensity)
+        return Ellipse(
+            cx=cx, cy=cy, rx=rx, ry=ry, rotation=rotation, device=device, intensity=intensity
+        )
 
     elif shape_type == "triangle":
         spread = base_size * 2
@@ -334,7 +360,9 @@ def greedy_refinement_loop(
         if freeze_existing:
             _freeze_shapes(shapes[:-1])
 
-        console.print(f"  Phase A: Settling new shape ({settle_steps} steps, freeze={freeze_existing})")
+        console.print(
+            f"  Phase A: Settling new shape ({settle_steps} steps, freeze={freeze_existing})"
+        )
         optimize(shapes, target, resolution, settle_steps, lr=0.02)
 
         if freeze_existing:
@@ -345,7 +373,9 @@ def greedy_refinement_loop(
 
         # Phase B: Re-optimize all shapes together
         if reoptimize_steps > 0:
-            console.print(f"  Phase B: Re-optimizing all {len(shapes)} shapes ({reoptimize_steps} steps)")
+            console.print(
+                f"  Phase B: Re-optimizing all {len(shapes)} shapes ({reoptimize_steps} steps)"
+            )
             metrics = optimize(shapes, target, resolution, reoptimize_steps, lr=0.02)
             loss_after = metrics["final_loss"]
             console.print(f"  After re-optimize: {loss_after:.6f}")
@@ -373,7 +403,9 @@ def greedy_refinement_loop(
             # Save round output
             round_dir = output_dir / f"round_{round_num:02d}_accept_{shape_type}"
             round_dir.mkdir(parents=True, exist_ok=True)
-            save_render(shapes, resolution, resolution, tau, device, str(round_dir / "optimized.png"))
+            save_render(
+                shapes, resolution, resolution, tau, device, str(round_dir / "optimized.png")
+            )
             shapes_to_svg(shapes, resolution, resolution, round_dir / "optimized.svg")
 
             history.append(
@@ -467,3 +499,46 @@ def greedy_refinement_loop(
         "history": history,
         "final_shapes": len(shapes),
     }
+
+
+## Tests
+
+
+def test_create_random_shapes_count():
+    device = torch.device("cpu")
+    shapes, names = create_random_shapes(5, device, seed=42)
+    assert len(shapes) == 5
+    assert len(names) == 5
+
+
+def test_create_random_shapes_types_cycle():
+    device = torch.device("cpu")
+    shapes, _names = create_random_shapes(6, device, seed=42)
+    # Cycles through circle, ellipse, triangle
+    assert isinstance(shapes[0], Circle)
+    assert isinstance(shapes[1], Ellipse)
+    assert isinstance(shapes[2], Triangle)
+    assert isinstance(shapes[3], Circle)
+    assert isinstance(shapes[4], Ellipse)
+    assert isinstance(shapes[5], Triangle)
+
+
+def test_create_random_shapes_reproducible():
+    device = torch.device("cpu")
+    shapes_a, names_a = create_random_shapes(3, device, seed=99)
+    shapes_b, names_b = create_random_shapes(3, device, seed=99)
+    assert names_a == names_b
+    for a, b in zip(shapes_a, shapes_b):
+        pa = a.get_params()
+        pb = b.get_params()
+        if isinstance(a, Circle):
+            assert float(pa.cx) == float(pb.cx)
+        elif isinstance(a, Ellipse):
+            assert float(pa.cx) == float(pb.cx)
+
+
+def test_create_random_shapes_empty():
+    device = torch.device("cpu")
+    shapes, names = create_random_shapes(0, device)
+    assert shapes == []
+    assert names == []
