@@ -26,6 +26,9 @@ streaming intermediate SVG frames live to the browser.
 - Support both `optimize` (fixed shape set) and `greedy-refine` (incremental shape addition)
   modes from the web UI
 - Shape initialization that starts with random shapes and visibly converges toward the target
+- Save all intermediate SVGs locally so the animation can be replayed offline
+- Copy current or final SVG to clipboard with one click
+- Download final SVG as a file
 
 ## Non-Goals
 
@@ -170,7 +173,9 @@ no framework. This keeps it dead simple to maintain alongside the Python package
 │                             │  ┌───────────────────────┐    │
 │   Shapes: 12                │  │  Drop image here      │    │
 │                             │  │  or click to browse    │    │
-│                             │  └───────────────────────┘    │
+│   ◄──────●────────────► 42  │  └───────────────────────┘    │
+│   [▶ Replay] [Copy SVG]    │                               │
+│              [↓ Download]   │  [↓ Download All (ZIP)]       │
 ├─────────────────────────────┴───────────────────────────────┤
 │  Loss: 0.0523 | MSE: 0.045 | Shapes: 12 | Best: 0.048     │
 └─────────────────────────────────────────────────────────────┘
@@ -194,8 +199,14 @@ Vanilla JS, no framework. Key functions:
 - `handleDrop(event)` / `handleFileSelect(event)` -- read image, show preview
 - `startOptimization()` -- POST upload, then open `EventSource` for SSE stream
 - `stopOptimization()` -- POST stop, close EventSource
-- `onSSEMessage(event)` -- parse JSON, update SVG display, progress bar, metrics
+- `onSSEMessage(event)` -- parse JSON, update SVG display, progress bar, metrics;
+  append frame to `svgHistory` array
 - `updateParams()` -- read slider/input values into a params object
+- `copySvgToClipboard()` -- copy current SVG markup via `navigator.clipboard.writeText()`
+- `downloadSvg()` -- save current frame as `.svg` file via `<a download>` trick
+- `downloadAllFrames()` -- export full `svgHistory` as ZIP (inline or via JSZip)
+- `scrubToFrame(index)` -- display a specific frame from `svgHistory`
+- `toggleReplay()` -- play/pause animation through `svgHistory` at configurable speed
 
 The SVG update is a simple `innerHTML` replacement on a container `<div>`. Since each
 SSE event contains a complete SVG document, no incremental DOM patching is needed.
@@ -228,6 +239,7 @@ SSE event contains a complete SVG document, no incremental DOM patching is neede
 | `GET` | `/api/stream/{session_id}` | SSE stream of optimization progress |
 | `POST` | `/api/stop/{session_id}` | Cancel running optimization |
 | `GET` | `/api/status` | Server status (is optimization running?) |
+| `GET` | `/api/download/{session_id}` | Download ZIP of all SVG frames + metadata |
 
 #### Dependencies
 
@@ -315,6 +327,54 @@ Parameters exposed in the UI, with defaults that work well for interactive use:
 Advanced parameters (learning rate, settle steps, etc.) are collapsed by default behind
 a "Show advanced" toggle.
 
+### SVG History, Replay, and Export
+
+Every SVG frame streamed during optimization is retained client-side in a JavaScript
+array. This enables several features without requiring server-side storage:
+
+#### Client-Side SVG History
+
+- The `onSSEMessage` handler appends each received SVG string (along with its step
+  number, loss, and shape count) to an in-memory `svgHistory` array.
+- Array entries are lightweight -- each is just the SVG markup string plus a few
+  numbers. Even 500 frames at ~2 KB each is only ~1 MB.
+- The history persists for the duration of the page session (cleared on page reload
+  or new optimization run).
+
+#### Animation Replay
+
+- A timeline scrubber (range slider) beneath the SVG display lets the user scrub
+  through all saved frames after optimization completes.
+- Play/pause button animates through the history at a configurable frame rate.
+- The scrubber shows step numbers and can snap to key events (shape additions in
+  greedy mode).
+- During live optimization, the scrubber is disabled and auto-follows the latest frame.
+  After completion, it becomes interactive.
+
+#### Copy to Clipboard
+
+- A "Copy SVG" button copies the currently displayed SVG markup to the system
+  clipboard using the `navigator.clipboard.writeText()` API.
+- The button shows brief "Copied!" feedback on success.
+- Works for any frame -- the user can scrub to a specific step and copy that frame.
+
+#### Download SVG
+
+- A "Download SVG" button saves the current SVG as a `.svg` file via a dynamically
+  created `<a>` element with a `data:` URI and `download` attribute.
+- Filename includes metadata: `pelican_step042_shapes12.svg`.
+- An additional "Download All" option exports the full history as a ZIP file
+  (using JSZip or a minimal inline implementation) containing all SVG frames,
+  useful for creating animations externally.
+
+#### Server-Side Frame Persistence
+
+- The server also saves SVG frames to the session's temp directory on disk
+  (at the same `stream_every` interval), mirroring what the CLI commands already do.
+- On `complete`, the server writes a `frames/` directory with numbered SVG files
+  and a `metadata.json` listing each frame's step, loss, and shape count.
+- A `GET /api/download/{session_id}` endpoint serves a ZIP of all frames.
+
 ## Implementation Plan
 
 ### Phase 1: Server, UI, and Basic Optimization
@@ -333,6 +393,7 @@ Core infrastructure: web server, static frontend, image upload, and running the
 - [ ] Create `commands_serve.py` with `pelican serve` CLI command (host, port, open browser)
 - [ ] Register `serve` command in `cli.py` dispatcher
 - [ ] Add `create_random_shapes()` utility for random initialization
+- [ ] Server: save SVG frames to session temp directory on disk
 
 ### Phase 2: Live SSE Streaming and Greedy Refinement
 
@@ -349,6 +410,13 @@ plus integration with the greedy refinement loop for incremental shape addition.
 - [ ] Frontend: mode switcher (optimize vs. greedy) with parameter panel adaptation
 - [ ] Frontend: shape count indicator and accepted/rejected shape notifications
 - [ ] Add `/api/status` endpoint for polling server state
+- [ ] Frontend: SVG history array -- accumulate all streamed frames client-side
+- [ ] Frontend: timeline scrubber for animation replay after optimization completes
+- [ ] Frontend: play/pause animation replay with configurable speed
+- [ ] Frontend: "Copy SVG" button (clipboard API) with visual feedback
+- [ ] Frontend: "Download SVG" button for current frame
+- [ ] Frontend: "Download All" button to export full frame history as ZIP
+- [ ] Server: `GET /api/download/{session_id}` endpoint for frame ZIP download
 
 ## Testing Strategy
 
@@ -367,8 +435,6 @@ plus integration with the greedy refinement loop for incremental shape addition.
 
 ## Open Questions
 
-- Should the web UI support saving/downloading the final SVG and PNG? (Probably yes --
-  a simple download button is low effort and high value.)
 - Should we show a small loss chart (sparkline or mini line chart) that updates live?
   This would be visually informative but adds JS complexity. Could use a simple
   canvas-based sparkline with no dependencies.

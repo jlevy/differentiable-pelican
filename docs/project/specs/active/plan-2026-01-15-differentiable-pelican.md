@@ -27,7 +27,8 @@ using the Porter-Duff "over" operator.
 - Photo-realistic rendering (grayscale silhouette only)
 - Complex SVG paths or Bezier curves (simple primitives only in v1)
 - Multi-provider LLM support (Anthropic only)
-- Web UI (CLI only)
+- Web UI (CLI only) — *now planned separately, see
+  [web UI spec](plan-2026-02-14-pelican-web-ui.md)*
 
 ## Background
 

@@ -114,6 +114,17 @@ pelican refine --target images/pelican-drawing-1.jpg --rounds 5  # requires ANTH
 | `pelican judge` | Evaluate current SVG with LLM |
 | `pelican refine` | Multi-round LLM refinement loop |
 | `pelican validate-image` | LLM-based image validation |
+| `pelican serve` | Launch interactive web UI (requires `[web]` extras) |
+
+## Web UI (planned)
+
+An interactive browser-based interface is planned via `pelican serve`. Drop any image
+onto the page, adjust parameters, and watch SVG shapes optimize in real time via
+server-sent events. Includes animation replay, copy-to-clipboard, and SVG download.
+Requires optional dependencies: `pip install differentiable-pelican[web]`.
+
+See the [web UI spec](docs/project/specs/active/plan-2026-02-14-pelican-web-ui.md)
+for full design details.
 
 ## Stack
 
@@ -130,6 +141,8 @@ pelican refine --target images/pelican-drawing-1.jpg --rounds 5  # requires ANTH
 
 - [Pelican Plan](docs/design/pelican-plan.md) -- full design document
   (rendering approach, loss functions, LLM architecture, rationale)
+- [Web UI spec](docs/project/specs/active/plan-2026-02-14-pelican-web-ui.md) --
+  interactive browser interface design
 - [Research log](docs/research-log.md) -- experiment history
 - [Installation](docs/installation.md) -- uv and Python setup
 - [Development](docs/development.md) -- dev workflows
