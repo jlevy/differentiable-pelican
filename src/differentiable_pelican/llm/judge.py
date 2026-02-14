@@ -168,8 +168,8 @@ def test_summarize_metrics_excludes_loss_history():
     assert summary["steps_completed"] == 3
     assert summary["resolution"] == 128
     assert summary["final_loss"] == 0.18
-    assert summary["initial_loss"]["total"] == 0.91  # type: ignore[index]
-    assert summary["final_loss_breakdown"]["total"] == 0.18  # type: ignore[index]
+    assert summary["initial_loss"]["total"] == 0.91  # pyright: ignore[reportIndexIssue]
+    assert summary["final_loss_breakdown"]["total"] == 0.18  # pyright: ignore[reportIndexIssue]
     # Summary should be compact (no per-step data)
     summary_json = json.dumps(summary)
     assert len(summary_json) < 500

@@ -62,9 +62,9 @@ def sdf_ellipse(
     a = torch.where(need_swap, ry, rx)
     b = torch.where(need_swap, rx, ry)
 
-    l = b * b - a * a  # Quilez convention: ab.y² - ab.x²
-    m = a * px / l
-    n = b * py / l
+    el = b * b - a * a  # Quilez convention: ab.y² - ab.x²
+    m = a * px / el
+    n = b * py / el
     m2 = m * m
     n2 = n * n
 
@@ -75,7 +75,7 @@ def sdf_ellipse(
     q = d + m2 * n2
     g = m + m * n2
 
-    sign_l = torch.sign(l)
+    sign_l = torch.sign(el)
 
     # Cubic solver: two branches depending on discriminant
     # Branch 1: d < 0 (trigonometric solution)
