@@ -148,6 +148,7 @@ cp out/greedy_refine/round_00_initial/optimized.png docs/results/03_greedy_initi
 cp out/greedy_refine/final/pelican_final.png docs/results/04_greedy_final.png
 cp out/greedy_refine/final/pelican_final.svg docs/results/04_greedy_final.svg
 cp out/greedy_refine/greedy_refinement.gif docs/results/04_greedy_refinement.gif
+cp out/greedy_refine/pipeline_stages.svg docs/results/pipeline_stages.svg
 ```
 
 **Check:** All files exist in `docs/results/` and match the latest run.
