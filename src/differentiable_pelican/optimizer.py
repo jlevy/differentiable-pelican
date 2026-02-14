@@ -90,10 +90,10 @@ def optimize(
     for shape in shapes:
         params.extend(list(shape.parameters()))
 
-    # Create optimizer with weight decay for regularization
+    # Create optimizer
     optimizer = torch.optim.Adam(params, lr=lr)
 
-    # Learning rate scheduler: warm up then cosine decay
+    # Learning rate scheduler: cosine decay to lr/20
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=steps, eta_min=lr / 20)
 
     # Precompute grid
