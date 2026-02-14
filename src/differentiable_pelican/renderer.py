@@ -15,9 +15,9 @@ def make_grid(height: int, width: int, device: torch.device) -> torch.Tensor:
     Returns:
         Tensor of shape [H, W, 2] with (x, y) coordinates in [0, 1]
     """
-    # Create pixel center coordinates
-    y = torch.linspace(0, 1, height, device=device)
-    x = torch.linspace(0, 1, width, device=device)
+    # Create pixel center coordinates: (i + 0.5) / N for i in [0, N)
+    x = (torch.arange(width, device=device, dtype=torch.float32) + 0.5) / width
+    y = (torch.arange(height, device=device, dtype=torch.float32) + 0.5) / height
 
     # Create meshgrid
     yy, xx = torch.meshgrid(y, x, indexing="ij")
@@ -123,13 +123,17 @@ def test_make_grid_normalized():
     assert torch.all((grid >= 0) & (grid <= 1))
 
 
-def test_make_grid_corners():
+def test_make_grid_pixel_centers():
     device = torch.device("cpu")
     grid = make_grid(64, 64, device)
-    # Top-left corner should be close to (0, 0)
-    assert torch.allclose(grid[0, 0], torch.tensor([0.0, 0.0], device=device), atol=0.02)
-    # Bottom-right corner should be close to (1, 1)
-    assert torch.allclose(grid[63, 63], torch.tensor([1.0, 1.0], device=device), atol=0.02)
+    # Pixel centers: first pixel at 0.5/64, last at 63.5/64
+    expected_first = 0.5 / 64
+    expected_last = 63.5 / 64
+    assert torch.allclose(grid[0, 0], torch.tensor([expected_first, expected_first], device=device))
+    assert torch.allclose(grid[63, 63], torch.tensor([expected_last, expected_last], device=device))
+    # No coordinate should be exactly 0.0 or 1.0
+    assert grid.min() > 0.0
+    assert grid.max() < 1.0
 
 
 def test_render_single_circle():
