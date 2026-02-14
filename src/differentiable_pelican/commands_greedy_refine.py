@@ -33,7 +33,9 @@ def greedy_refine_command() -> None:
         default=Path("out/greedy_refine"),
         help="Output directory (default: out/greedy_refine)",
     )
-    parser.add_argument("--resolution", type=int, default=128, help="Image resolution (default: 128)")
+    parser.add_argument(
+        "--resolution", type=int, default=128, help="Image resolution (default: 128)"
+    )
     parser.add_argument("--max-shapes", type=int, default=20, help="Max total shapes (default: 20)")
     parser.add_argument(
         "--initial-steps", type=int, default=500, help="Initial optimization steps (default: 500)"
