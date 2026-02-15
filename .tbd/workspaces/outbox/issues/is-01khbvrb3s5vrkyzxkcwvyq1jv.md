@@ -10,6 +10,6 @@ priority: 2
 status: closed
 title: "Review pelican-plan.md Section 2: Architecture Overview - update diagram to reflect v2 changes (9-shape, intensity, rollback)"
 type: is
-updated_at: 2026-02-13T17:53:00.351Z
-version: 4
+updated_at: 2026-02-15T23:53:25.577Z
+version: 6
 ---

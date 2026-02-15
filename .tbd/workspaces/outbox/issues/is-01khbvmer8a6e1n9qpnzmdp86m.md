@@ -10,6 +10,6 @@ priority: 2
 status: closed
 title: Fix hardcoded pi (3.14159) in svg_export.py:66 - use math.pi instead
 type: is
-updated_at: 2026-02-13T17:53:00.255Z
-version: 4
+updated_at: 2026-02-15T23:53:25.489Z
+version: 6
 ---

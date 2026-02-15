@@ -15,7 +15,7 @@ priority: 0
 status: closed
 title: End-to-end pipeline run with PR image review
 type: is
-updated_at: 2026-02-13T16:58:23.669Z
-version: 6
+updated_at: 2026-02-15T23:53:25.662Z
+version: 8
 ---
 Run the full differentiable pelican pipeline end-to-end: test-render, optimize (500 steps), full refine loop (5 rounds), then post all images and results as a comment on PR #1 for visual review.

@@ -11,7 +11,7 @@ priority: 1
 status: closed
 title: Run test-render at 128x128
 type: is
-updated_at: 2026-02-13T16:40:50.725Z
-version: 2
+updated_at: 2026-02-15T23:53:25.669Z
+version: 4
 ---
 Run pelican test-render at 128x128 to verify initial 9-shape geometry renders correctly. Save PNG and SVG.

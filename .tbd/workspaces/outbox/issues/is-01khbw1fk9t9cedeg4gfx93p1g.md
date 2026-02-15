@@ -10,6 +10,6 @@ priority: 2
 status: closed
 title: Migrate pelican-plan.md to proper tbd plan spec format using tbd plan-spec shortcut
 type: is
-updated_at: 2026-02-13T17:53:00.404Z
-version: 4
+updated_at: 2026-02-15T23:53:25.635Z
+version: 6
 ---

@@ -9,6 +9,6 @@ spec_path: docs/project/specs/active/plan-2026-02-13-greedy-refinement-loop.md
 status: in_progress
 title: Implement greedy shape-dropping refinement loop (Phase 1)
 type: is
-updated_at: 2026-02-13T17:52:50.626Z
-version: 2
+updated_at: 2026-02-15T23:53:25.698Z
+version: 4
 ---

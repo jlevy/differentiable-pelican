@@ -10,6 +10,6 @@ priority: 3
 status: closed
 title: "Remove obvious/redundant test docstrings per general-testing-rules and python-rules: test function names are already descriptive enough"
 type: is
-updated_at: 2026-02-13T17:53:00.298Z
-version: 4
+updated_at: 2026-02-15T23:53:25.532Z
+version: 6
 ---

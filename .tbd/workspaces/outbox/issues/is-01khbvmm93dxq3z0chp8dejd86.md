@@ -10,6 +10,6 @@ priority: 2
 status: closed
 title: Fix silent except pass in refine.py:245-246 - should log warning per error-handling-rules anti-pattern 3
 type: is
-updated_at: 2026-02-13T17:53:00.262Z
-version: 4
+updated_at: 2026-02-15T23:53:25.497Z
+version: 6
 ---

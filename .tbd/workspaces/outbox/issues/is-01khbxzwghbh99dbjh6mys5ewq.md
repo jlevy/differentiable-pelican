@@ -11,7 +11,7 @@ priority: 1
 status: closed
 title: "Post images and metrics to PR #1"
 type: is
-updated_at: 2026-02-13T16:58:23.213Z
-version: 2
+updated_at: 2026-02-15T23:53:25.690Z
+version: 4
 ---
 Upload all result images (test render, optimized, refined, target) to the PR #1 as a comment with a visual comparison table showing before/after at each stage, plus loss metrics.

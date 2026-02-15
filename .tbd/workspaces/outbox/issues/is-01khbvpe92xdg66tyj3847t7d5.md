@@ -10,6 +10,6 @@ priority: 1
 status: closed
 title: Run copier update to get latest simple-modern-uv template and ensure everything is upgraded
 type: is
-updated_at: 2026-02-13T17:53:00.325Z
-version: 4
+updated_at: 2026-02-15T23:53:25.557Z
+version: 6
 ---

@@ -10,7 +10,7 @@ priority: 1
 status: closed
 title: Move docs to docs/design/ subdirectory
 type: is
-updated_at: 2026-02-13T17:53:00.418Z
-version: 3
+updated_at: 2026-02-15T23:53:25.648Z
+version: 5
 ---
 Move pelican-plan.md and implementation-progress.md from docs/ to docs/design/ subdirectory. Update all references in README.md and other files.

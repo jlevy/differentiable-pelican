@@ -10,6 +10,6 @@ priority: 2
 status: closed
 title: Remove unimplemented 'export' command from cli.py help text and dispatch - dead code per general-coding-rules
 type: is
-updated_at: 2026-02-13T17:53:00.278Z
-version: 4
+updated_at: 2026-02-15T23:53:25.511Z
+version: 6
 ---

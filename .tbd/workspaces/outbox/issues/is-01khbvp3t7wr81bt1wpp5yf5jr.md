@@ -10,6 +10,6 @@ priority: 2
 status: closed
 title: Add missing return type annotation on render_to_numpy in renderer.py:81
 type: is
-updated_at: 2026-02-13T17:53:00.312Z
-version: 4
+updated_at: 2026-02-15T23:53:25.545Z
+version: 6
 ---
