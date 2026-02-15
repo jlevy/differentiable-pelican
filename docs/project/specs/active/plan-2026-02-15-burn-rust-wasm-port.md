@@ -499,6 +499,68 @@ Goal: Make it a usable demo. Add the remaining loss components and a proper UI.
 4. Merge to main when Phase 2 is proven
 5. Deploy demo to GitHub Pages (static hosting, no server needed)
 
+## Burn API Research Findings
+
+Verified against Burn 0.20 source code (2026-01-15 release):
+
+### Confirmed Working
+
+- **`#[derive(Module)]` on enums**: First-class supported. Each variant must hold exactly one unnamed Module-implementing field. Tested in burn-core's test suite. Our `ShapeKind` enum will work as designed.
+- **`Vec<T>` in Module structs**: Fully supported via blanket impl. `Vec<ShapeKind<B>>` as a field in `PelicanModel` works. Caveat: `load_record()` requires Vec lengths to match.
+- **Optimizer API**: `optim.step(lr: f64, model: M, grads: GradientsParams) -> M` — functional style, returns updated model. Learning rate is passed per-step, enabling manual LR scheduling with no scheduler needed.
+- **All required tensor ops**: `sigmoid()`, `clamp()`, `powf_scalar()`, `sqrt()`, `neg()`, `sum_dim()`, `unsqueeze()`, `cos()`, `sin()` — all confirmed in source.
+- **Autodiff pattern**: `loss.backward()` → `GradientsParams::from_grads(grads, &model)` → `optim.step(lr, model, grads)`.
+
+### Gaps Requiring Workarounds
+
+- **No `linspace`**: Must be built manually from a `Vec<f64>` and `TensorData::new()`.
+- **No cosine LR scheduler**: Compute LR manually each step: `lr * 0.5 * (1.0 + (PI * step / total).cos())`.
+- **No `clip_grad_norm_`**: Compute global gradient norm manually, scale if above threshold.
+- **`softplus` not a standalone function**: Implement as `tensor.exp().log1p()` or similar.
+- **`from_floats()` converts to f32**: Use `TensorData::new()` directly for f64 precision.
+- **No `torch.where` directly**: Use `Tensor::mask_where()` for conditional selection.
+
+### Wasm-Specific Notes
+
+- **NdArray backend compiles to `wasm32-unknown-unknown`**: Tested in burn-no-std-tests crate.
+- **`burn-autodiff` works without `std`**: Uses `spin` locks as fallback (no `parking_lot` in Wasm).
+- **`burn-train` does NOT work in Wasm**: But we don't need it — our custom optimization loop bypasses `burn-train` entirely.
+- **Wasm crate must use `#![cfg_attr(not(test), no_std)]`**: Follow the MNIST web example pattern.
+- **Build flags**: `RUSTFLAGS="-C embed-bitcode=yes -C codegen-units=1 -C opt-level=3"` + `wasm-pack build --target web --no-default-features --features ndarray`.
+- **Async data access**: Some Burn tensor data operations require `.into_data_async().await` in Wasm.
+
+## Porting Methodology
+
+Following the [Rust Porting Playbook](https://github.com/jlevy/rust-porting-playbook) methodology, adapted for a numerical/Wasm port rather than a CLI port:
+
+### Applicable Patterns from the Playbook
+
+- **Port behavior, not implementation**: Map PyTorch concepts to Burn idioms rather than mechanically translating Python syntax. Burn's functional optimizer API is cleaner than PyTorch's in-place mutation.
+- **Tests as specification**: The Python test suite (SDF unit tests, gradient checks, rendering output comparisons) defines expected behavior. Port tests first, then implement to make them pass.
+- **Cross-validation as quality gate**: Run both PyTorch and Burn against the same inputs and compare outputs — with numerical tolerance (not byte-for-byte matching, which is the playbook's CLI default).
+- **Leaf-first porting order**: Port SDF math → renderer → loss → optimizer → integration, matching the dependency chain.
+- **Budget 30-50% of effort for library fixes**: Expect significant effort bridging PyTorch/Burn behavioral differences, especially in gradient computation and numerical precision.
+- **Start with owned types**: Use owned `Tensor<B, D>` throughout initially. Match PyTorch's mental model. Optimize borrowing later.
+- **Decision log**: Record all architectural decisions (backend choice, enum vs trait, single package vs workspace) with context/decision/consequences format.
+- **Workaround tracking**: Mark any Burn-specific workarounds with `XXX:` comments for searchability and future cleanup.
+- **Error handling**: `thiserror` for pelican-core library errors, `anyhow` for any CLI/demo layer.
+
+### Adaptations for Numerical/Wasm Port
+
+The playbook was built from CLI text-processing ports. Key adjustments for our domain:
+
+| Playbook Pattern | CLI Port | Our Adaptation |
+|-----------------|----------|----------------|
+| Output matching | Byte-for-byte text diff | Numerical tolerance (e.g., `\|a - b\| < 1e-5`) |
+| Cross-validation | Shell script running both CLIs | Rust integration test comparing tensor outputs |
+| Test fixtures | Text files in `test-fixtures/` | Serialized tensors + reference images |
+| Performance target | <10MB binary, <50ms startup | <3MB Wasm, <50ms/step in browser |
+| Entry point | CLI with clap | `#[wasm_bindgen]` API |
+| Parallelism | `rayon` for data parallelism | Single-threaded (Wasm); future WebGPU |
+| Async runtime | `tokio` | `wasm-bindgen-futures` (if needed) |
+| Distribution | Cross-platform binaries | Wasm module served via CDN/GitHub Pages |
+| `unsafe` policy | `forbid` | `warn` (Wasm interop occasionally needs `unsafe`) |
+
 ## Open Questions
 
 - Should the Rust crates live in this repository or a separate one? (Leaning: same repo, since it's the same project. Cargo workspace alongside pyproject.toml is fine.)
@@ -506,13 +568,15 @@ Goal: Make it a usable demo. Add the remaining loss components and a proper UI.
 - Is 128x128 the right default resolution for the browser demo, or should we start at 64x64? (Leaning: 64x64 for Phase 2 spike, 128x128 for Phase 3.)
 - Should the web UI use a framework (React, Svelte) or plain HTML/JS? (Leaning: plain HTML/JS for the spike. Framework optional for Phase 3.)
 - What's the right `requestAnimationFrame` strategy — one step per frame (60 steps/sec) or batch multiple steps per frame? (Leaning: batch 10 steps per frame, render every 10th.)
+- Should we use `f32` or `f64` for tensor computations? Burn defaults to f32 for most backends, which is standard for GPU workloads, but PyTorch uses f32 by default too. (Leaning: f32 for tensors, matching GPU convention.)
 
 ## References
 
 - [Research Brief: Browser-Local Differentiable Rendering via Wasm](../../research/research-2026-02-15-python-wasm-feasibility.md) — detailed feasibility analysis
 - [Original Spec: Differentiable Pelican](plan-2026-01-15-differentiable-pelican.md) — Python implementation spec
 - [Greedy Refinement Spec](plan-2026-02-13-greedy-refinement-loop.md) — greedy shape-dropping (future Phase 4)
-- [Burn Framework](https://github.com/tracel-ai/burn) — Rust deep learning framework (14,358 stars)
+- [Burn Framework](https://github.com/tracel-ai/burn) — Rust deep learning framework
 - [Burn MNIST Web Example](https://github.com/tracel-ai/burn/tree/main/examples/mnist-inference-web) — reference for Wasm deployment patterns
 - [wasm-bindgen](https://github.com/rustwasm/wasm-bindgen) — Rust/JS FFI for Wasm
 - [wasm-pack](https://rustwasm.github.io/wasm-pack/) — Build tool for Rust Wasm packages
+- [Rust Porting Playbook](https://github.com/jlevy/rust-porting-playbook) — General Python-to-Rust porting methodology (adapted for this numerical/Wasm port; see porting methodology section above)
