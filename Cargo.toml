@@ -1,0 +1,3 @@
+[workspace]
+members = ["crates/pelican-core", "crates/pelican-wasm"]
+resolver = "2"
