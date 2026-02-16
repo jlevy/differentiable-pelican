@@ -6,7 +6,7 @@ use burn::backend::Autodiff;
 use burn::prelude::*;
 
 use pelican_core::geometry::create_initial_pelican;
-use pelican_core::optimizer::{optimize, OptimConfig, StepResult};
+use pelican_core::optimizer::{optimize, OptimConfig, OptimResult, StepResult};
 use pelican_core::renderer::render_to_pixels;
 use pelican_core::svg_export::shapes_to_svg;
 
@@ -86,8 +86,6 @@ fn main() {
     let model = create_initial_pelican::<MyAutodiffBackend>(&device);
     let config = OptimConfig::new(resolution, steps);
 
-    // Collect frames for animation
-    let output_dir_clone = output_dir.to_path_buf();
     let mut best_loss = f32::MAX;
     let mut callback = |result: StepResult| {
         let step = result.step;
@@ -100,15 +98,10 @@ fn main() {
         if step % 50 == 0 || step == steps - 1 {
             println!("  Step {}/{}: loss = {:.6} (best = {:.6})", step, steps, loss, best_loss);
         }
-
-        if step % save_every == 0 || step == steps - 1 {
-            // We can't render from inside the callback since we don't have the model ref.
-            // Just record the step number for now.
-            let _ = &output_dir_clone;
-        }
     };
 
-    let (optimized_model, loss_history) = optimize(model, &target_tensor, &config, Some(&mut callback));
+    let OptimResult { model: optimized_model, loss_history, snapshots } =
+        optimize(model, &target_tensor, &config, save_every, Some(&mut callback));
 
     // Save final optimized result
     println!("\n  Final loss: {:.6}", loss_history.last().unwrap_or(&0.0));
@@ -122,23 +115,11 @@ fn main() {
     let optimized_svg = shapes_to_svg(&optimized_model, res_u32 * 4, res_u32 * 4);
     save_svg(&optimized_svg, &output_dir.join("02_optimized.svg"));
 
-    // Save intermediate frames at different tau values to show the optimization progression
-    println!("\n  Rendering optimization frames...");
-    let tau_values: Vec<(usize, f32)> = (0..steps)
-        .step_by(save_every)
-        .chain(std::iter::once(steps - 1))
-        .map(|s| {
-            let tau = pelican_core::optimizer::anneal_tau(s, steps, config.tau_start, config.tau_end);
-            (s, tau)
-        })
-        .collect();
-
-    // Since we can't rewind the model to intermediate states, render the final model at different tau values
-    // to show what the SDF looks like at each sharpness level
-    for (i, &(_step, tau)) in tau_values.iter().enumerate() {
-        let pixels = render_to_pixels(&optimized_model, resolution, resolution, tau, &device);
+    // Save intermediate frames (pre-rendered during optimization from actual model states)
+    println!("\n  Saving {} optimization frames...", snapshots.len());
+    for (i, snapshot) in snapshots.iter().enumerate() {
         let frame_path = output_dir.join(format!("frames/frame_{:04}.png", i));
-        save_png(&pixels, res_u32, res_u32, &frame_path);
+        save_png(&snapshot.pixels, res_u32, res_u32, &frame_path);
     }
 
     // ========================================

@@ -51,7 +51,8 @@ fn test_optimize_gradients_flow() {
     let model = create_initial_pelican::<MyBackend>(&device);
     let config = OptimConfig::new(32, 10);
 
-    let (_, loss_history) = optimize(model, &target, &config, None);
+    let result = optimize(model, &target, &config, 0, None);
+    let loss_history = result.loss_history;
 
     assert_eq!(loss_history.len(), 10, "should complete all 10 steps");
 

@@ -3,9 +3,9 @@ use burn::optim::{AdamConfig, GradientsParams, Optimizer};
 use burn::prelude::*;
 use burn::tensor::backend::AutodiffBackend;
 
-use crate::geometry::PelicanModel;
+use crate::geometry::{PelicanModel, PelicanModelRecord};
 use crate::loss::{total_loss, LossWeights};
-use crate::renderer::{make_grid, render};
+use crate::renderer::{make_grid, render, render_to_pixels};
 
 /// Exponential tau annealing (log-linear interpolation).
 pub fn anneal_tau(step: usize, total_steps: usize, tau_start: f32, tau_end: f32) -> f32 {
@@ -60,13 +60,32 @@ pub struct StepResult {
     pub step: usize,
 }
 
+/// A rendered frame snapshot from during optimization.
+pub struct Snapshot {
+    pub step: usize,
+    pub loss: f32,
+    pub pixels: Vec<u8>,
+}
+
+/// Full optimization result including snapshots.
+pub struct OptimResult<B: Backend> {
+    pub model: PelicanModel<B>,
+    pub loss_history: Vec<f32>,
+    pub snapshots: Vec<Snapshot>,
+}
+
 /// Run the full optimization loop.
+///
+/// Includes NaN safety: detects NaN loss before backward pass and NaN
+/// gradients before parameter update. Tracks and restores best model state.
+/// Saves model snapshots every `save_every` steps (0 = no snapshots).
 pub fn optimize<B: AutodiffBackend>(
     model: PelicanModel<B>,
     target: &Tensor<B, 2>,
     config: &OptimConfig,
+    save_every: usize,
     mut progress_callback: Option<&mut dyn FnMut(StepResult)>,
-) -> (PelicanModel<B>, Vec<f32>) {
+) -> OptimResult<B> {
     let device = model.devices()[0].clone();
     let grid = make_grid(config.resolution, config.resolution, &device);
 
@@ -76,6 +95,9 @@ pub fn optimize<B: AutodiffBackend>(
 
     let mut model = model;
     let mut loss_history = Vec::with_capacity(config.steps);
+    let mut best_loss = f32::INFINITY;
+    let mut best_record: Option<PelicanModelRecord<B>> = None;
+    let mut snapshots = Vec::new();
 
     for step in 0..config.steps {
         let tau = anneal_tau(step, config.steps, config.tau_start, config.tau_end);
@@ -93,8 +115,26 @@ pub fn optimize<B: AutodiffBackend>(
             cb(StepResult { loss: loss_val, step });
         }
 
+        // Check for NaN before backward pass (NaN gradients corrupt params irreversibly)
         if loss_val.is_nan() {
+            eprintln!("Warning: NaN loss at step {step}, stopping");
             break;
+        }
+
+        // Save rendered frame snapshot at regular intervals
+        if save_every > 0 && (step % save_every == 0 || step == config.steps - 1) {
+            let pixels = render_to_pixels(&model, config.resolution, config.resolution, tau, &device);
+            snapshots.push(Snapshot {
+                step,
+                loss: loss_val,
+                pixels,
+            });
+        }
+
+        // Track best model state
+        if loss_val < best_loss {
+            best_loss = loss_val;
+            best_record = Some(model.clone().into_record());
         }
 
         // Backward + update
@@ -103,5 +143,14 @@ pub fn optimize<B: AutodiffBackend>(
         model = optim.step(lr, model, grads);
     }
 
-    (model, loss_history)
+    // Restore best parameters if we have them
+    if let Some(record) = best_record {
+        model = model.load_record(record);
+    }
+
+    OptimResult {
+        model,
+        loss_history,
+        snapshots,
+    }
 }

@@ -17,11 +17,19 @@ pub fn sdf_circle<B: Backend>(
 
     let dx = gx - cx;
     let dy = gy - cy;
-    let dist = (dx.clone() * dx + dy.clone() * dy).sqrt();
+    // Epsilon prevents gradient singularity at exact center (sqrt(0) has infinite gradient)
+    let dist = (dx.clone() * dx + dy.clone() * dy + 1e-10).sqrt();
     dist - radius
 }
 
-/// SDF for an ellipse (approximate via normalized-space distance).
+/// SDF for an ellipse using scaled normalized distance.
+///
+/// Uses the normalized-distance approximation scaled by geometric mean radius:
+///     sdf ≈ (‖p_normalized‖ - 1) · √(rx·ry)
+///
+/// This is differentiable everywhere with bounded gradients, making it ideal
+/// for gradient-based optimization. The approximation error vs the exact
+/// Quilez solution is sub-pixel at typical rendering resolutions.
 pub fn sdf_ellipse<B: Backend>(
     grid: &Tensor<B, 3>,
     cx: Tensor<B, 1>,
@@ -46,14 +54,18 @@ pub fn sdf_ellipse<B: Backend>(
     let x_rot = dx.clone() * cos_theta.clone() - dy.clone() * sin_theta.clone();
     let y_rot = dx * sin_theta + dy * cos_theta;
 
-    let rx_2d = rx.clone().unsqueeze::<2>();
-    let ry_2d = ry.clone().unsqueeze::<2>();
-    let x_norm = x_rot / rx_2d.clone();
-    let y_norm = y_rot / ry_2d.clone();
+    // Epsilon prevents division by near-zero radii
+    let rx_2d = rx.clone().unsqueeze::<2>() + 1e-10;
+    let ry_2d = ry.clone().unsqueeze::<2>() + 1e-10;
+    let x_norm = x_rot / rx_2d;
+    let y_norm = y_rot / ry_2d;
 
-    let dist_norm = (x_norm.clone() * x_norm + y_norm.clone() * y_norm).sqrt();
-    let avg_radius = (rx_2d + ry_2d) / 2.0;
-    (dist_norm - 1.0) * avg_radius
+    // Epsilon inside sqrt prevents gradient singularity at exact center
+    let dist_norm = (x_norm.clone() * x_norm + y_norm.clone() * y_norm + 1e-10).sqrt();
+
+    // Scale by geometric mean radius for proper distance units
+    let scale = (rx.unsqueeze::<2>() * ry.unsqueeze::<2>() + 1e-10).sqrt();
+    (dist_norm - 1.0) * scale
 }
 
 /// SDF for a triangle using edge-distance + cross-product sign test.
