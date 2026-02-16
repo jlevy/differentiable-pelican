@@ -131,10 +131,15 @@ def _generate_greedy_gif(output_dir: Path, final_png: Path) -> None:
     try:
         import imageio.v3 as iio  # pyright: ignore[reportMissingImports]
 
-        # Collect frame PNGs: initial + each accepted round + final best
+        # Collect frame PNGs: pre-optimization + post-optimization + each accepted round + final best
         frame_paths: list[Path] = []
 
-        # Initial optimization frame
+        # Pre-optimization frame (crude initial geometry)
+        pre_opt_frame = output_dir / "round_00_initial" / "initial.png"
+        if pre_opt_frame.exists():
+            frame_paths.append(pre_opt_frame)
+
+        # Post-optimization frame (after initial gradient descent)
         initial_frame = output_dir / "round_00_initial" / "optimized.png"
         if initial_frame.exists():
             frame_paths.append(initial_frame)
@@ -185,10 +190,15 @@ def _generate_composite_svg(
     # Collect all available stage SVGs
     stages: list[tuple[Path, str, str]] = []
 
-    # Initial optimization
-    initial_svg = output_dir / "round_00_initial" / "optimized.svg"
+    # Pre-optimization initial geometry
+    initial_svg = output_dir / "round_00_initial" / "initial.svg"
     if initial_svg.exists():
-        stages.append((initial_svg, "Optimized", "9 shapes"))
+        stages.append((initial_svg, "Initial", "9 shapes"))
+
+    # Post-optimization (after initial gradient descent)
+    optimized_svg = output_dir / "round_00_initial" / "optimized.svg"
+    if optimized_svg.exists():
+        stages.append((optimized_svg, "Optimized", "9 shapes"))
 
     # Accepted rounds
     accepted = [r for r in history if r.get("accepted", False)]
@@ -278,14 +288,18 @@ def greedy_refinement_loop(
     console.print(f"\n[bold cyan]Phase 1: Initial optimization ({initial_steps} steps)[/bold cyan]")
     console.print(f"  Shapes: {len(shapes)} ({', '.join(names)})")
 
+    # Save pre-optimization state (initial geometry before gradient descent)
+    round_dir = output_dir / "round_00_initial"
+    round_dir.mkdir(parents=True, exist_ok=True)
+    tau = 0.5 / resolution
+    save_render(shapes, resolution, resolution, tau, device, str(round_dir / "initial.png"))
+    shapes_to_svg(shapes, resolution, resolution, round_dir / "initial.svg")
+
     metrics = optimize(shapes, target, resolution, initial_steps, lr=0.02)
     initial_loss = metrics["final_loss"]
     console.print(f"  Initial loss: {initial_loss:.6f}")
 
-    # Save initial state
-    round_dir = output_dir / "round_00_initial"
-    round_dir.mkdir(parents=True, exist_ok=True)
-    tau = 0.5 / resolution
+    # Save post-optimization state
     save_render(shapes, resolution, resolution, tau, device, str(round_dir / "optimized.png"))
     shapes_to_svg(shapes, resolution, resolution, round_dir / "optimized.svg")
 

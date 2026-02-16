@@ -63,7 +63,7 @@ Target: a [vintage pelican engraving](images/pelican-drawing-1.jpg)
 Starting from 9 hand-coded shapes, the pipeline optimizes via gradient
 descent (500 steps of Adam), then greedily adds shapes one at a time
 -- freeze existing, settle the newcomer (100 steps), re-optimize all
-jointly (200 steps), keep only if loss drops. All 26 greedy candidates
+jointly (200 steps), keep only if loss drops. 26 of 29 greedy candidates
 were accepted. The full progression, initial through final:
 
 <img src="docs/results/pipeline_stages.svg" alt="Pipeline stages: initial through greedy rounds to final (35 shapes)"/>
@@ -71,8 +71,8 @@ were accepted. The full progression, initial through final:
 | Stage | Loss | Shapes | vs Baseline |
 |-------|------|--------|-------------|
 | Initial geometry | -- | 9 | -- |
-| Optimized (500 steps) | 0.0351 | 9 | -- |
-| Greedy refined (35 shapes) | 0.0238 | 35 | -32% |
+| Optimized (500 steps) | 0.0345 | 9 | -- |
+| Greedy refined (35 shapes) | 0.0251 | 35 | -27% |
 
 Per-round metrics in the [research log](docs/research-log.md).
 Full image progression in [detailed results](docs/results/README.md).
