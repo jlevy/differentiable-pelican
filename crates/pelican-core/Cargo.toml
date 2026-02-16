@@ -1,0 +1,16 @@
+[package]
+name = "pelican-core"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "pelican-pipeline"
+path = "src/bin/pipeline.rs"
+
+
+[dependencies]
+burn = { version = "0.16", features = ["ndarray", "autodiff"] }
+image = "0.25"
+
+[dev-dependencies]
+burn = { version = "0.16", features = ["ndarray", "autodiff"] }

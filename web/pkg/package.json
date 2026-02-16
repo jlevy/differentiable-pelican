@@ -1,0 +1,15 @@
+{
+  "name": "pelican-wasm",
+  "type": "module",
+  "version": "0.1.0",
+  "files": [
+    "pelican_wasm_bg.wasm",
+    "pelican_wasm.js",
+    "pelican_wasm.d.ts"
+  ],
+  "main": "pelican_wasm.js",
+  "types": "pelican_wasm.d.ts",
+  "sideEffects": [
+    "./snippets/*"
+  ]
+}
