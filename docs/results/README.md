@@ -1,6 +1,6 @@
 # End-to-End Pipeline Results
 
-Full pipeline run on 2026-02-13 at 128x128 resolution on CPU.
+Full pipeline run on 2026-02-14 at 128x128 resolution on CPU.
 
 ## Pipeline Stages
 
@@ -20,7 +20,7 @@ beak_upper, beak_lower, wing, tail, eye, feet), each with grayscale intensity:
 ### 2. Optimization (500 steps, Adam, lr=0.02)
 
 Gradient descent minimizing MSE + SSIM + edge + geometric priors.
-Final loss: **0.0351** after 500 steps.
+Final loss: **0.0345** after 500 steps.
 
 ![Optimized](02_optimized.png)
 
@@ -28,7 +28,7 @@ Optimization animation:
 
 ![Optimization GIF](02_optimization.gif)
 
-### 3. Greedy Refinement (shape-dropping)
+### 3. Greedy Refinement
 
 Greedy forward selection: add one shape at a time, let gradient descent
 find optimal placement, keep only if loss improves.
@@ -41,11 +41,11 @@ Two-phase trial per candidate:
 
 ![Greedy Initial](03_greedy_initial.png)
 
-**Greedy refinement animation** (initial → each accepted shape → final):
+**Greedy refinement animation** (initial -> each accepted shape -> final):
 
 ![Greedy Refinement GIF](04_greedy_refinement.gif)
 
-**Final** (20 shapes, 11 added, 0 rejected):
+**Final** (35 shapes, 26 added, 3 rejected):
 
 ![Greedy Final](04_greedy_final.png)
 
@@ -54,59 +54,54 @@ Two-phase trial per candidate:
 | Stage | Loss | Shapes | Notes |
 |-------|------|--------|-------|
 | Test render | N/A | 9 | Initial hard-coded geometry |
-| Optimize (500 steps) | 0.0351 | 9 | Baseline single-run result |
-| Greedy round 1 | 0.0350 | 10 | +circle, accepted |
-| Greedy round 2 | 0.0349 | 11 | +ellipse, accepted |
-| Greedy round 3 | 0.0340 | 12 | +triangle, accepted |
-| Greedy round 4 | 0.0331 | 13 | +circle, accepted |
-| Greedy round 5 | 0.0305 | 14 | +ellipse, accepted (big improvement) |
-| Greedy round 6 | 0.0290 | 15 | +triangle, accepted |
-| Greedy round 7 | 0.0290 | 16 | +circle, accepted |
-| Greedy round 8 | 0.0286 | 17 | +ellipse, accepted |
-| Greedy round 9 | 0.0284 | 18 | +triangle, accepted |
-| Greedy round 10 | 0.0284 | 19 | +circle, accepted |
-| Greedy round 11 | 0.0259 | 20 | +ellipse, accepted (big improvement) |
-| **Greedy final** | **0.0259** | **20** | **26% better than optimize-only** |
-
-### 4. Extended Greedy Refinement (35 shapes)
-
-Same algorithm with a higher shape budget (35 instead of 20). 26 additional
-shapes added, 0 rejected. Loss dropped to **0.0238** (32% better than baseline).
-
-**Extended refinement animation:**
-
-![Extended Greedy GIF](05_greedy_extended.gif)
-
-**Final** (35 shapes):
-
-![Extended Greedy Final](05_greedy_extended_final.png)
-
-## Extended Metrics
-
-| Stage | Loss | Shapes | Notes |
-|-------|------|--------|-------|
-| Greedy round 16 | 0.0249 | 25 | +circle, plateau-breaker |
-| Greedy round 20 | 0.0240 | 29 | +ellipse |
-| Greedy round 26 | 0.0238 | 35 | +ellipse (final) |
-| **Extended final** | **0.0238** | **35** | **32% better than optimize-only** |
+| Optimize (500 steps) | 0.0345 | 9 | Baseline single-run result |
+| Greedy round 1 | 0.0343 | 10 | +circle, accepted |
+| Greedy round 2 | 0.0342 | 11 | +ellipse, accepted |
+| Greedy round 3 | 0.0343 | 12 | +triangle, accepted |
+| Greedy round 4 | 0.0342 | 13 | +circle, accepted |
+| Greedy round 5 | 0.0335 | 14 | +ellipse, accepted |
+| Greedy round 6 | 0.0323 | 15 | +triangle, accepted (big improvement) |
+| Greedy round 7 | 0.0320 | 16 | +circle, accepted |
+| Greedy round 8 | 0.0314 | 17 | +ellipse, accepted |
+| Greedy round 9 | 0.0311 | 18 | +triangle, accepted |
+| Greedy round 10 | 0.0305 | 19 | +circle, accepted |
+| Greedy round 13 | 0.0305 | 20 | +circle, accepted |
+| Greedy round 14 | 0.0300 | 21 | +ellipse, accepted |
+| Greedy round 16 | 0.0280 | 22 | +circle, accepted (big improvement) |
+| Greedy round 17 | 0.0280 | 23 | +ellipse, accepted |
+| Greedy round 18 | 0.0278 | 24 | +triangle, accepted |
+| Greedy round 19 | 0.0278 | 25 | +circle, accepted |
+| Greedy round 20 | 0.0271 | 26 | +ellipse, accepted |
+| Greedy round 21 | 0.0272 | 27 | +triangle, accepted |
+| Greedy round 22 | 0.0271 | 28 | +circle, accepted |
+| Greedy round 23 | 0.0257 | 29 | +ellipse, accepted (big improvement) |
+| Greedy round 24 | 0.0257 | 30 | +triangle, accepted |
+| Greedy round 25 | 0.0255 | 31 | +circle, accepted |
+| Greedy round 26 | 0.0253 | 32 | +ellipse, accepted |
+| Greedy round 27 | 0.0253 | 33 | +triangle, accepted |
+| Greedy round 28 | 0.0253 | 34 | +circle, accepted |
+| Greedy round 29 | 0.0251 | 35 | +ellipse, accepted |
+| **Greedy final** | **0.0251** | **35** | **27% better than optimize-only** |
 
 ## Observations
 
 1. **Optimization works well**: 500 steps of gradient descent produces a
    recognizable pelican silhouette from the initial 9-shape geometry.
 
-2. **Greedy refinement is highly effective**: Every candidate shape was
-   accepted (11/11). Loss dropped 26% from 0.0351 to 0.0259. The two-phase
+2. **Greedy refinement is highly effective**: 26 of 29 candidate shapes were
+   accepted. Loss dropped 27% from 0.0345 to 0.0251. The two-phase
    approach (settle then re-optimize) lets each shape find its best placement
    before the whole scene adjusts.
 
-3. **No LLM needed for placement**: Gradient descent handles WHERE to put
+3. **Gradient-stable ellipse SDF**: Using the normalized-distance approximation
+   (scaled by geometric mean radius) instead of the Quilez analytical method
+   eliminates all NaN gradient instabilities. The visual difference is
+   imperceptible after sigmoid smoothing at 128x128 resolution. This allows
+   the pipeline to reach the full 35-shape budget without any NaN issues.
+
+4. **No LLM needed for placement**: Gradient descent handles WHERE to put
    each shape. The greedy loop just decides WHAT to add (cycling through
    circle, ellipse, triangle). No API key required.
-
-4. **Diminishing but persistent returns**: Extending to 35 shapes still
-   improves loss (26% → 32% improvement), but returns diminish. Rounds 1-11
-   averaged 0.0008/round; rounds 12-26 averaged 0.0001/round.
 
 5. **Key areas for further improvement**:
    - Shape replacement: swap out the least-helpful shape for a different type

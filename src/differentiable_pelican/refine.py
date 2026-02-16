@@ -198,7 +198,7 @@ def refinement_loop(
 
             # Architect proposes edits
             console.print("  [cyan]Generating edits with architect...[/cyan]")
-            arch_response = architect_edits(feedback)
+            arch_response = architect_edits(feedback, shapes=shapes, shape_names=names)
 
             # Save architect response
             arch_path = round_dir / "architect.json"
