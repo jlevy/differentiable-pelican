@@ -20,7 +20,10 @@ pub fn softplus<B: Backend, const D: usize>(tensor: Tensor<B, D>) -> Tensor<B, D
 }
 
 fn pt<B: Backend>(vals: &[f32], device: &B::Device) -> Param<Tensor<B, 1>> {
-    Param::initialized(ParamId::new(), Tensor::from_floats(vals, device))
+    Param::initialized(
+        ParamId::new(),
+        Tensor::from_floats(vals, device).set_require_grad(true),
+    )
 }
 
 #[derive(Module, Debug)]
